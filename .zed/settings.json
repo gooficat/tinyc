@@ -1,0 +1,13 @@
+{
+	"lsp": {
+		"clangd": {
+			"binary": {
+				"ignore_system_version": true,
+				"path": "C:/msys64/ucrt64/bin/clangd.exe",
+				"arguments": [
+					"--compile-commands-dir=$ZED_WORKTREE_ROOT/build",
+				],
+			},
+		},
+	},
+}
