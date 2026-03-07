@@ -35,7 +35,16 @@ popped_state:
 	char *t = this->token;
 	if (this->fileBuffer->buffer != EOF)
 	{
-		if (isalnum(this->fileBuffer->buffer))
+		if (this->fileBuffer->buffer == '"')
+		{
+			do
+			{
+				*t++ = this->fileBuffer->buffer;
+				this->fileBuffer->buffer = fgetc(this->fileBuffer->file);
+			} while (this->fileBuffer->buffer != '"');
+			this->fileBuffer->buffer = fgetc(this->fileBuffer->file);
+		}
+		else if (isalnum(this->fileBuffer->buffer))
 		{
 			do
 			{

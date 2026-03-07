@@ -1,4 +1,4 @@
 token ize(me) {
 	please();
-	and thank you;
+	and "thank you";
 }
