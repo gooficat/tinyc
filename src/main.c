@@ -1,6 +1,12 @@
-#include <stdio.h>
+#include "tok.h"
 
 int main(void)
 {
-	puts("hello");
+	tokstrm ts;
+	tokstrminit(&ts, "../tests/test1");
+	while (*ts.tbuf)
+	{
+		printf("'%s'", ts.tbuf);
+		tokstrmnext(&ts);
+	}
 }
