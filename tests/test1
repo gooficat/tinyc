@@ -1,1 +1,11 @@
-int main() { return 0; }
+(scope ((num argc) ((ptr (ptr char)) argv) ((ptr char) arg))
+	(fun main(argc argv)
+	(
+	(= arg (deref argv))
+	(label printargs)
+		(call (puts) arg)
+		(jmp printargs)
+	(label done)
+	)
+	)
+)
