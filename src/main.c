@@ -33,5 +33,6 @@ int main()
 		}
 		tok_strm__next(&ts);
 	}
+	tok_strm__destroy(&ts);
 	return 0;
 }

@@ -139,5 +139,16 @@ void tok_strm__next(tok_strm_s *ts)
 
 void tok_strm__destroy(tok_strm_s *ts)
 {
-	///
+	unsigned long long i;
+	free(ts->buf);
+	for (i = 0; i < ts->str_pool.len; ++i)
+	{
+		free(ts->str_pool.data[i]);
+	}
+	for (i = 0; i < ts->ident_pool.len; ++i)
+	{
+		free(ts->ident_pool.data[i]);
+	}
+	free(ts->str_pool.data);
+	free(ts->ident_pool.data);
 }
