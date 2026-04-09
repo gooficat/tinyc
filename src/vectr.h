@@ -13,6 +13,8 @@
 	do                                       \
 	{                                        \
 		(v).data = malloc(sizeof *(v).data); \
+		(v).len	 = 0;                        \
+		(v).cap	 = 1;                        \
 	} while (0)
 #define vec_update(v) (v).data = realloc((v).data, (v).cap * sizeof *(v).data)
 #define vec_trim(v) (v).data = realloc((v).data, (v).len * sizeof *(v).data)

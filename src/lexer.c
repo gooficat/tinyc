@@ -19,8 +19,9 @@ void tok_strm__init(tok_strm_s *ts, const char *pat)
 	fseek(f, 0l, SEEK_END);
 	len = ftell(f);
 	fseek(f, 0l, SEEK_SET);
-	ts->buf		  = malloc(len + 1);
-	rlen		  = (long)fread(ts->buf, 1, len, f);
+	ts->buf = malloc(len + 1);
+	rlen	= (long)fread(ts->buf, 1, len, f);
+	fclose(f);
 	ts->buf[rlen] = '\0';
 	if (rlen != len)
 	{
@@ -34,9 +35,28 @@ void tok_strm__init(tok_strm_s *ts, const char *pat)
 	tok_strm__next(ts);
 }
 
+int tok_strm__list_search(tok_strm_s *ts, const char **list, long long list_len)
+{
+	long long i, j;
+	for (i = 0; i < list_len; ++i)
+	{
+		j = strlen(list[i]);
+		if (memcmp(ts->skr, list[i], j))
+			continue;
+		if (isalnum(list[i][0]) && (isalnum(ts->skr[j]) || ts->skr[j] == '_'))
+			continue;
+		ts->skr += j;
+		ts->tok.num = i;
+		return 0;
+	}
+	return -1;
+}
+
 void tok_strm__next(tok_strm_s *ts)
 {
 	long long i, j;
+	char	 *eos;
+
 	while (isspace(*ts->skr))
 	{
 		++ts->skr;
@@ -49,7 +69,7 @@ void tok_strm__next(tok_strm_s *ts)
 
 	if (*ts->skr == '"')
 	{
-		char *eos, *str;
+		char *str;
 		ts->tok.typ = TOK_STRLIT;
 		++ts->skr;
 		do
@@ -57,50 +77,64 @@ void tok_strm__next(tok_strm_s *ts)
 			eos = strchr(ts->skr, '"');
 		} while (*(eos - 1) != '\\');
 		i	= eos - ts->skr + 1;
-		str = malloc(i);
+		str = malloc(i + 1);
 		memcpy(str, ts->skr, i);
-		vec_push(ts->str_pool, str);
+		str[i] = '\0';
 		ts->skr += i;
+		for (i = 0; i < (long long)ts->str_pool.len; ++i)
+		{
+			j = strlen(ts->str_pool.data[i]);
+			if (memcmp(str, ts->str_pool.data[i], j))
+				continue;
+			ts->tok.num = i;
+			free(str);
+			return;
+		}
+		ts->tok.num = ts->str_pool.len;
+		vec_push(ts->str_pool, str);
+		ts->tok.str = str;
 		return;
 	}
 
-	for (i = 0; i < NUM_OPERATORS; ++i)
+	if (isdigit(*ts->skr))
 	{
-		j = strlen(OPERATORS[i]);
-		if (memcmp(ts->skr, OPERATORS[i], j))
-			continue;
-		if (isalnum(OPERATORS[i][0]) && (isalnum(ts->skr[j]) || ts->skr[j] == '_'))
-			continue;
-		ts->skr += j;
+		ts->tok.typ = TOK_CONST;
+		ts->tok.num = strtoll(ts->skr, &ts->skr, 0);
+		return;
+	}
+
+	if (tok_strm__list_search(ts, &OPERATORS[0], NUM_OPERATORS) != -1)
+	{
 		ts->tok.typ = TOK_OPER;
-		ts->tok.num = i;
 		return;
 	}
-	for (i = 0; i < NUM_KEYWORDS; ++i)
+	if (tok_strm__list_search(ts, &KEYWORDS[0], NUM_KEYWORDS) != -1)
 	{
-		j = strlen(KEYWORDS[i]);
-		if (memcmp(ts->skr, KEYWORDS[i], j))
-			continue;
-		if (isalnum(ts->skr[j]))
-			continue;
-		ts->skr += j;
 		ts->tok.typ = TOK_KEYW;
-		ts->tok.num = i;
 		return;
 	}
-	for (i = 0; i < NUM_PUNCTUATORS; ++i)
+	if (tok_strm__list_search(ts, &PUNCTUATORS[0], NUM_PUNCTUATORS) != -1)
 	{
-		j = strlen(PUNCTUATORS[i]);
-		if (memcmp(ts->skr, OPERATORS[i], j))
-			continue;
-		// if (isalnum(PUNCTUATORS[i][0]) && (isalnum(ts->skr[j]) || ts->skr[j] == '_'))
-		// 	continue;
-		ts->skr += j;
 		ts->tok.typ = TOK_PUNC;
-		ts->tok.num = i;
 		return;
 	}
-	//
+
+	ts->tok.typ = TOK_IDENT;
+	if (tok_strm__list_search(ts, (const char **)&ts->ident_pool.data[0], ts->ident_pool.len) != -1)
+	{
+		return;
+	}
+	eos = ts->skr;
+	while (*eos == '_' || isalnum(*eos))
+		++eos;
+	i = eos - ts->skr;
+
+	eos = malloc(i + 1);
+	memcpy(eos, ts->skr, i);
+	eos[i] = '\0';
+	ts->skr += i;
+	ts->tok.num = ts->ident_pool.len;
+	vec_push(ts->ident_pool, eos);
 }
 
 void tok_strm__destroy(tok_strm_s *ts)

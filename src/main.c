@@ -7,7 +7,7 @@ int main()
 	tok_strm_s ts;
 	puts("Hello");
 	tok_strm__init(&ts, "test/1.c");
-	while (ts.tok.typ != EOF)
+	while (ts.tok.typ != TOK_EOF)
 	{
 		switch (ts.tok.typ)
 		{
@@ -23,8 +23,13 @@ int main()
 		case TOK_IDENT:
 			printf("identifier %s\n", ts.ident_pool.data[ts.tok.num]);
 			break;
-		default:
+		case TOK_STRLIT:
+			printf("string \"%s\"\n", ts.str_pool.data[ts.tok.num]);
 			break;
+		case TOK_CONST:
+			printf("constant %lld\n", ts.tok.num);
+		case TOK_EOF:
+			break; // unreachable
 		}
 		tok_strm__next(&ts);
 	}
