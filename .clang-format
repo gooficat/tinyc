@@ -1,4 +1,8 @@
 BasedOnStyle: Microsoft
 UseTab: Always
+TabWidth: 4
+IndentWidth: 4
+BreakBeforeBraces: Allman
 AlignConsecutiveAssignments: true
 AlignConsecutiveDeclarations: true
+ColumnLimit: 0
