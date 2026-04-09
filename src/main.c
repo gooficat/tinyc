@@ -4,7 +4,7 @@
 
 int main()
 {
-	tok_strm_s ts;
+	tok_strm ts;
 	puts("Hello");
 	tok_strm__init(&ts, "test/1.c");
 	while (ts.tok.typ != TOK_EOF)

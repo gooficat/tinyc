@@ -23,7 +23,7 @@ typedef enum
 	KWD_WHILE,
 	KWD_DO,
 	KWD_FOR,
-} keyword_e;
+} keyword;
 
 #define NUM_KEYWORDS (KWD_FOR + 1)
 
@@ -63,7 +63,7 @@ typedef enum
 	OP_DEC,
 	OP_EQU,
 	OP_ARROW,
-} operator_e;
+} operator;
 
 #define NUM_OPERATORS (OP_ARROW + 1)
 
@@ -78,7 +78,7 @@ typedef enum
 	PNC_DOT_OP,
 	PNC_SEMI,
 	PNC_COLON,
-} punctuator_e;
+} punctuator;
 
 #define NUM_PUNCTUATORS (PNC_COLON + 1)
 

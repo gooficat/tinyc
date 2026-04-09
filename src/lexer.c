@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-void tok_strm__init(tok_strm_s *ts, const char *pat)
+void tok_strm__init(tok_strm *ts, const char *pat)
 {
 	FILE *f;
 	long  len, rlen;
@@ -35,7 +35,7 @@ void tok_strm__init(tok_strm_s *ts, const char *pat)
 	tok_strm__next(ts);
 }
 
-int tok_strm__list_search(tok_strm_s *ts, const char **list, long long list_len)
+int tok_strm__list_search(tok_strm *ts, const char **list, long long list_len)
 {
 	long long i, j;
 	for (i = 0; i < list_len; ++i)
@@ -52,7 +52,7 @@ int tok_strm__list_search(tok_strm_s *ts, const char **list, long long list_len)
 	return -1;
 }
 
-void tok_strm__next(tok_strm_s *ts)
+void tok_strm__next(tok_strm *ts)
 {
 	long long i, j;
 	char	 *eos;
@@ -137,7 +137,7 @@ void tok_strm__next(tok_strm_s *ts)
 	vec_push(ts->ident_pool, eos);
 }
 
-void tok_strm__destroy(tok_strm_s *ts)
+void tok_strm__destroy(tok_strm *ts)
 {
 	unsigned long long i;
 	free(ts->buf);

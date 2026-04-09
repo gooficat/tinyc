@@ -8,7 +8,7 @@
 		t				  *data;     \
 		unsigned long long len, cap; \
 	}
-#define vec_type(t) typedef vec_struct(t) vec_##t##_s
+#define vec_type(t) typedef vec_struct(t) vec_##t
 #define vec_init(v)                          \
 	do                                       \
 	{                                        \

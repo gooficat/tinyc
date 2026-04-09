@@ -15,30 +15,30 @@ typedef enum
 	TOK_CONST,
 	TOK_STRLIT,
 	TOK_IDENT,
-} tok_typ_e;
+} tok_type;
 
 typedef struct
 {
-	tok_typ_e typ;
+	tok_type typ;
 	union
 	{
 		long long num;
 		double	  flt;
 		char	 *str;
 	};
-} tok_s;
+} tok;
 
 typedef struct
 {
-	tok_s		tok;
-	char	   *buf;
-	char	   *skr;
-	vec_pchar_s str_pool;
-	vec_pchar_s ident_pool;
-} tok_strm_s;
+	tok		  tok;
+	char	 *buf;
+	char	 *skr;
+	vec_pchar str_pool;
+	vec_pchar ident_pool;
+} tok_strm;
 
-void tok_strm__init(tok_strm_s *ts, const char *pat);
-void tok_strm__next(tok_strm_s *ts);
-void tok_strm__destroy(tok_strm_s *ts);
+void tok_strm__init(tok_strm *ts, const char *pat);
+void tok_strm__next(tok_strm *ts);
+void tok_strm__destroy(tok_strm *ts);
 
 #endif //!__LEXER__H__
