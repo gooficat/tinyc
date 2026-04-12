@@ -11,8 +11,10 @@ typedef enum
 	TYPE_STRUCTURED,
 	TYPE_ENUMERATED,
 } type_cat;
+
 typedef struct type type;
 vec_type(type);
+
 typedef struct
 {
 	type *und_type;
@@ -33,7 +35,12 @@ struct type
 {
 	type_cat		   cat;
 	unsigned long long size;
-	void			  *info;
+	union
+	{
+		integer_type_info i;
+		struc_type_info	  s;
+		ptr_type_info	  p;
+	};
 };
 
 #endif //!__TYPS__H__
