@@ -35,6 +35,8 @@ typedef enum
 	AST_BIN_OP,
 	AST_SYM_REF,
 	AST_LITERAL,
+	AST_ORDER,
+	AST_COND,
 } ast_node_type;
 
 typedef enum
@@ -94,6 +96,32 @@ typedef struct
 	ast_sym	 *sym;
 	ast_scope body;
 } ast_func;
+
+typedef enum
+{
+	AST_ORDER_RETURN,
+	AST_ORDER_CONTINUE,
+	AST_ORDER_BREAK,
+	AST_ORDER_GOTO,
+} ast_order_cat;
+typedef struct
+{
+	ast_order_cat cat;
+} ast_order;
+
+typedef enum
+{
+	AST_COND_IF,
+	AST_COND_WHILE,
+	AST_COND_FOR,
+	AST_COND_DO_WHILE,
+} ast_cond_cat;
+typedef struct
+{
+	ast_cond_cat cat;
+	ast_node	*cond;
+	ast_node	*body;
+} ast_cond;
 
 struct ast_node
 {
