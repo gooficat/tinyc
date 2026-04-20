@@ -6,3 +6,4 @@ BreakBeforeBraces: Allman
 AlignConsecutiveAssignments: true
 AlignConsecutiveDeclarations: true
 ColumnLimit: 0
+QualifierAlignment: Right

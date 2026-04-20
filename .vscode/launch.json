@@ -6,7 +6,7 @@
 			"type": "cppvsdbg",
 			"cwd": "${workspaceFolder}",
 			"request": "launch",
-			"program": "${workspaceFolder}/build/${workspaceFolderBasename}",
+			"program": "${workspaceFolder}/build/Debug/${workspaceFolderBasename}",
 			"preLaunchTask": "CMake: build",
 			"console": "integratedTerminal",
 			"internalConsoleOptions": "openOnFirstSessionStart",
