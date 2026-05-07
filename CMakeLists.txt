@@ -1,10 +1,21 @@
 cmake_minimum_required(VERSION 3.10)
+
 get_filename_component(ProjectId ${CMAKE_CURRENT_SOURCE_DIR} NAME)
 string(REPLACE " " "_" ProjectId ${ProjectId})
+
 project(${ProjectId})
-set(CMAKE_C_STANDARD 99)
+
+set(CMAKE_C_STANDARD 90)
+set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-include_directories(src)
-file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.c)
+
+set(CMAKE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "$<1:${CMAKE_CURRENT_SOURCE_DIR}/bin>")
+
+include_directories(${CMAKE_SOURCE_DIR})
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/*.c)
+
 add_executable(${ProjectId} ${SOURCES})
