@@ -155,8 +155,8 @@ struct ASTNodeOrder
 };
 struct ASTNodeConditional
 {
-	enum ASTConditionalType	   type;
-	struct ASTConditionalValue value;
+	enum ASTConditionalType	  type;
+	union ASTConditionalValue value;
 };
 
 struct ASTNodeScope
