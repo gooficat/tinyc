@@ -1,4 +1,40 @@
 #include <stdio.h>
+#include <vcruntime.h>
+
+//////////////
+
+#define safe_macro(m, ...) \
+	do                     \
+	{                      \
+		m(__VA_ARGS__)     \
+	} while (0)
+
+//////////////
+
+#define vec_struct_body(type)         \
+	{                                 \
+		type			  *data;      \
+		unsigned long long size, cap; \
+	}
+
+#define Mvec_init(vec)                   \
+	vec.data = malloc(sizeof *vec.data); \
+	vec.size = 0;                        \
+	vec.cap	 = 1;
+#define vec_init(vec) safe_macro(Mvec_init, (vec))
+
+#define vec_update(vec) (vec).data = realloc((vec).data, (vec).size * sizeof *(vec).data)
+
+#define Mvec_push(vec, new)  \
+	if (vec.size >= vec.cap) \
+	{                        \
+		vec.cap *= 2;        \
+		vec_update(vec);     \
+	}                        \
+	vec.data[vec.size++] = new;
+#define vec_push(vec, new) safe_macro(Mvec_push, (vec), (new))
+
+#define vec_type(type) typedef struct vec_struct(type) Vec_##type;
 
 //////////////
 
@@ -45,6 +81,8 @@ struct CSymbol
 
 ////////////////
 
+struct Vec_ASTNode vec_struct_body(struct ASTNode);
+
 enum ASTNodeType
 {
 	ASTNODE_NONE,
@@ -77,8 +115,16 @@ enum ASTConditionalType
 	// ASTCOND_FOR,
 };
 
+union ASTConditionalValue
+{
+	struct ASTNode *expr;
+	// struct ASTNode* triple_expr[3]; // for loops
+};
+
 union ASTOrderValue
 {
+	struct ASTNode *expr;
+	struct CSymbol *symbol;
 };
 
 // struct ASTNodeUnary
@@ -109,9 +155,13 @@ struct ASTNodeOrder
 };
 struct ASTNodeConditional
 {
+	enum ASTConditionalType	   type;
+	struct ASTConditionalValue value;
 };
+
 struct ASTNodeScope
 {
+	struct Vec_ASTNode body;
 };
 
 union ASTNodeValue
@@ -132,6 +182,10 @@ struct ASTNode
 	enum ASTNodeType   type;
 	union ASTNodeValue value;
 };
+
+////////////////
+
+void GenAST(struct ASTNode *node);
 
 ////////////////
 
