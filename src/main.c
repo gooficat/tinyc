@@ -11,10 +11,10 @@
 
 //////////////
 
-#define vec_struct_body(type)         \
-	{                                 \
-		type			  *data;      \
-		unsigned long long size, cap; \
+#define vec_struct_body(type)    \
+	{                            \
+		type		 *data;      \
+		unsigned long size, cap; \
 	}
 
 #define Mvec_init(vec)                   \
@@ -40,8 +40,8 @@
 
 struct PascalString
 {
-	char			  *data;
-	unsigned long long length;
+	char		 *data;
+	unsigned long length;
 };
 
 ///////////////
@@ -56,7 +56,7 @@ enum CConstType
 
 union CConstVal
 {
-	long long			integer;
+	long				integer;
 	long double			floating;
 	struct PascalString string;
 };
