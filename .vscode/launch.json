@@ -1,0 +1,11 @@
+{
+    "configurations": [
+        {
+            "type": "cmake",
+            "request": "launch",
+            "name": "CMake: Externally launched",
+            "cmakeDebugType": "external",
+            "pipeName": "<...>"
+        }
+    ]
+}

@@ -2,7 +2,7 @@ BasedOnStyle: Microsoft
 UseTab: Always
 TabWidth: 4
 IndentWidth: 4
-BreakBeforeBraces: Allman
+BreakBeforeBraces: Attach
 AlignConsecutiveAssignments: true
 AlignConsecutiveDeclarations: true
 ColumnLimit: 0
