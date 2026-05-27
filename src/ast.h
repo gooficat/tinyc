@@ -18,7 +18,8 @@ typedef enum ASTType {
 typedef struct vec_body(struct ASTNode) Vec_ASTNode;
 
 struct ASTScope {
-	Vec_ASTNode body;
+	struct ASTNode *members;
+	size_t			num_members;
 };
 
 typedef enum {
