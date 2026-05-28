@@ -29,19 +29,6 @@ static void Lexer_ReadLine(Lexer *lexer) {
 	}
 }
 
-static void Lexer_Advance(Lexer *lexer, size_t n) {
-	while (n) {
-		if (!*lexer->skr) {
-			Lexer_ReadLine(lexer);
-			if (!lexer->skr) {
-				return;
-			}
-		}
-		++lexer->skr;
-		--n;
-	}
-}
-
 static int Lexer_SearchDict(char *const src, char const *const *dict) {
 	size_t i;
 	size_t l = strlen(src);
@@ -76,7 +63,7 @@ recheck:
 		goto recheck;
 	}
 	if (isspace(*lexer->skr)) {
-		Lexer_Advance(lexer, 1);
+		++lexer->skr;
 		goto recheck;
 	}
 
@@ -90,8 +77,8 @@ recheck:
 		} while (lexer->skr[i - 1] != '\\');
 		lexer->token.data.cn.val.s = malloc(i + 1);
 		strncpy((char *)lexer->token.data.cn.val.s, lexer->skr, i - 1);
-		Lexer_Advance(lexer, i);
-		Lexer_Advance(lexer, i);
+		lexer->skr += i;
+		lexer->skr += i;
 		return;
 	}
 
@@ -108,7 +95,7 @@ recheck:
 			lexer->token.data.cn.type  = CCONST_INTEG;
 			lexer->token.data.cn.val.i = strtoll(lexer->skr, NULL, 0);
 		}
-		Lexer_Advance(lexer, i);
+		lexer->skr += i;
 		return;
 	}
 
@@ -117,7 +104,7 @@ recheck:
 		if (i != -1) {
 			lexer->token.type	 = TOK_KEYW;
 			lexer->token.data.kw = i;
-			Lexer_Advance(lexer, strlen(KEYWORDS[i]));
+			lexer->skr += strlen(KEYWORDS[i]);
 			return;
 		}
 		for (i = 0; lexer->skr[i] == '_' || isalpha(lexer->skr[i]); ++i)
@@ -126,7 +113,7 @@ recheck:
 		lexer->token.data.id = malloc(i + 1);
 		memcpy(lexer->token.data.id, lexer->skr, i);
 		lexer->token.data.id[i] = 0;
-		Lexer_Advance(lexer, i);
+		lexer->skr += i;
 		return;
 	}
 
@@ -134,7 +121,7 @@ recheck:
 	if (i != -1) {
 		lexer->token.type	 = TOK_PUNC;
 		lexer->token.data.pn = i;
-		Lexer_Advance(lexer, strlen(PUNCTUATORS[i]));
+		lexer->skr += strlen(PUNCTUATORS[i]);
 		return;
 	}
 
@@ -142,7 +129,7 @@ recheck:
 	if (i != -1) {
 		lexer->token.type	 = TOK_OPER;
 		lexer->token.data.pn = i;
-		Lexer_Advance(lexer, strlen(OPERATORS[i]));
+		lexer->skr += strlen(OPERATORS[i]);
 		return;
 	}
 }
