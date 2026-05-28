@@ -9,7 +9,7 @@
 #define rbdasel(d) (size_t *)((uint8_t *)d - sizeof(size_t[1]))
 #define rbda(d) rbdalen(d)
 
-void *i_damk(size_t const sel) {
+void *idamk(size_t const sel) {
 	void *da									   = malloc(sizeof(size_t[3]) + sel);
 	*(size_t *)da								   = 0;
 	*(size_t *)((uint8_t *)da + sizeof(size_t))	   = 1;
@@ -23,10 +23,14 @@ void *darsz(void *da, size_t const nsz) {
 	}
 	*rbdalen(da) = nsz;
 	if (nsz >= *rbdacap(da)) {
-		*rbdacap(da) *= 2;
+		do {
+			*rbdacap(da) *= 2;
+		} while (nsz >= *rbdacap(da));
 		goto out_update;
 	} else if (*rbdacap(da) > 1 && nsz < *rbdacap(da) / 2) {
-		*rbdacap(da) /= 2;
+		do {
+			*rbdacap(da) /= 2;
+		} while (*rbdacap(da) > 1 && nsz < *rbdacap(da) / 2);
 		goto out_update;
 	}
 	return da;

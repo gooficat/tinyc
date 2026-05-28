@@ -1,11 +1,14 @@
 {
     "configurations": [
         {
-            "type": "cmake",
+            "name": "(gdb) Launch",
+            "type": "cppvsdbg",
             "request": "launch",
-            "name": "CMake: Externally launched",
-            "cmakeDebugType": "external",
-            "pipeName": "<...>"
+            "program": "${workspaceFolder}/bin/${workspaceFolderBasename}.exe",
+            "cwd": "${workspaceRoot}",
+            "internalConsoleOptions": "openOnSessionStart",
+            "preLaunchTask": "CMake: build"
         }
+        
     ]
 }

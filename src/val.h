@@ -1,9 +1,9 @@
 #ifndef __VAL__H__
 #define __VAL__H__
-
-#include <stdbool.h>
 #include <stdint.h>
 #include <vcruntime.h>
+
+typedef uint8_t bool;
 
 typedef enum {
 	TYPE_NONE,
@@ -42,12 +42,21 @@ typedef struct {
 	CType	   *type;
 } CVariable;
 
-typedef struct {
-	CType *type;
+typedef enum {
+	CCONST_NONE,
+	CCONST_INTEG,
+	CCONST_FLOAT,
+	CCONST_STRING,
+	CCONST_COMPOUND
+} CConstType;
+
+typedef struct CConst {
+	CConstType type;
 	union {
-		int64_t		i;
-		long double f;
-		char const *s;
+		int64_t		   i;
+		long double	   f;
+		char const	  *s;
+		struct CConst *c;
 	} val;
 } CConst;
 
