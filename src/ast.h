@@ -1,8 +1,12 @@
 #ifndef __AST__H__
 #define __AST__H__
 
+#include "da.h"
 #include "val.h"
-#include "vec.h"
+
+typedef struct {
+	char const *name;
+} CSymbol;
 
 typedef enum ASTType {
 	AST_NONE,
@@ -15,11 +19,8 @@ typedef enum ASTType {
 	AST_CONST
 } ASTType;
 
-typedef struct vec_body(struct ASTNode) Vec_ASTNode;
-
 struct ASTScope {
 	struct ASTNode *members;
-	size_t			num_members;
 };
 
 typedef enum {
