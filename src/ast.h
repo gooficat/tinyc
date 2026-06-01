@@ -2,6 +2,7 @@
 #define __AST__H__
 
 #include "da.h"
+#include "lex.h"
 #include "val.h"
 
 typedef struct {
@@ -16,12 +17,14 @@ typedef enum ASTType {
 	AST_CALL,
 	AST_FUNC,
 	AST_ORDER,
-	AST_CONST
+	AST_CONST,
+	AST_REF
 } ASTType;
-
-struct ASTScope {
-	struct ASTNode *members;
-};
+typedef struct ASTScope {
+	struct ASTNode	*members;
+	CSymbol			*symbols;
+	struct ASTScope *parent;
+} ASTScope;
 
 typedef enum {
 	ORDER_NONE,
@@ -34,7 +37,7 @@ typedef enum {
 typedef struct ASTNode {
 	ASTType type;
 	union {
-		struct ASTScope scope;
+		ASTScope scope;
 		struct {
 			struct ASTNode *l, *r;
 		} binop;
@@ -55,10 +58,11 @@ typedef struct ASTNode {
 				CSymbol		   *label;
 			} val;
 		} order;
-		CConst *constant;
+		CConst	*constant;
+		CSymbol *ref;
 	} val;
 } ASTNode;
 
-void ParseTree(ASTNode *node);
+void ParseTree(ASTNode *node, Lexer *lexer);
 
 #endif

@@ -20,6 +20,8 @@ file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/*.c)
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 
+set(_CRT_SECURE_NO_WARNINGS)
+
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   if(NOT MSVC)
     target_compile_options(${PROJECT_NAME} PRIVATE -g -O0 -Wall -Wextra -Wpedantic)

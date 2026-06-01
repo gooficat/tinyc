@@ -4,6 +4,8 @@
 char const *const KEYWORDS[] = {
 	"auto",
 	"register",
+	"volatile",
+	"const",
 	"int",
 	"char",
 	"short",
@@ -14,8 +16,6 @@ char const *const KEYWORDS[] = {
 	"struct",
 	"enum",
 	"union",
-	"const",
-	"volatile",
 	"extern",
 	"static",
 	"if",
