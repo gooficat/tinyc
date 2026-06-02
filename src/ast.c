@@ -2,12 +2,53 @@
 #include "da.h"
 #include "dict.h"
 #include "lex.h"
+#include "val.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 static void HandleStmt(Lexer *lexer, ASTScope *scope);
 static void GenNode(ASTNode *node, Lexer *lexer, ASTScope *scope);
+
+static CType *BuildPrimitiveType(Lexer *lexer, ASTScope *scope) {
+	CType *out = malloc(sizeof *out);
+	switch (lexer->token.data.kw) {
+	case KW_REGISTER:
+		goto unimp;
+	case KW_INT:
+		out->type = TYPE_INTEGER;
+		Lexer_Next(lexer);
+		break;
+	unimp:
+	case KW_CHAR:
+
+	case KW_SHORT:
+
+	case KW_LONG:
+
+	case KW_FLOAT:
+
+	case KW_DOUBLE:
+
+	case KW_VOID:
+
+	case KW_STRUCT:
+
+	case KW_ENUM:
+
+	case KW_UNION:
+
+	case KW_CONST:
+
+	case KW_VOLATILE:
+
+		break;
+	default:
+		fprintf(stderr, "Malformed type\n");
+		exit(EXIT_FAILURE);
+	}
+	return out;
+}
 
 static CSymbol *FindSymbol(char const *const name, ASTScope *scope) {
 	size_t i;
@@ -22,9 +63,15 @@ static CSymbol *FindSymbol(char const *const name, ASTScope *scope) {
 	return NULL;
 }
 
-static void GenScope(ASTNode *node, Lexer *lexer, ASTScope *scope) {
+static void InitScope(ASTScope *scope, ASTScope *parent) {
+	scope->parent  = parent;
+	scope->members = damk(ASTNode);
+	scope->symbols = damk(CSymbol);
+}
+
+static void GenScope(ASTScope *scope, Lexer *lexer) {
 	while (lexer->token.type != TOK_PUNC || lexer->token.data.pn != PN_BRACER) {
-		HandleStmt(lexer, &node->val.scope);
+		HandleStmt(lexer, scope);
 	}
 }
 
@@ -68,12 +115,14 @@ static void GenNode(ASTNode *node, Lexer *lexer, ASTScope *scope) {
 }
 
 static void HandleDef(Lexer *lexer, ASTScope *scope) {
-	if (lexer->token.data.kw == KW_INT) {
-		Lexer_Next(lexer);
-	} else {
-		fprintf(stderr, "Unimplemented\n");
-		exit(EXIT_FAILURE);
+	/* if (lexer->token.data.kw == KW_TYPEDEF) {
+ } else */
+	CSymbol sym;
+	sym.type = BuildPrimitiveType(lexer, scope);
+	if (lexer->token.type == TOK_PUNC && lexer->token.data.pn == PN_PARENL) {
 	}
+	sym.name = lexer->token.data.id;
+	Lexer_Next(lexer);
 }
 
 static void HandleStmt(Lexer *lexer, ASTScope *scope) {

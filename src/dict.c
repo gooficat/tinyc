@@ -2,7 +2,6 @@
 #include <stddef.h>
 
 char const *const KEYWORDS[] = {
-	"auto",
 	"register",
 	"volatile",
 	"const",
@@ -16,6 +15,7 @@ char const *const KEYWORDS[] = {
 	"struct",
 	"enum",
 	"union",
+	"auto",
 	"extern",
 	"static",
 	"if",
