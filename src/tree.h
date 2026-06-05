@@ -21,6 +21,7 @@ extern struct ast {
     AstUnOp,
     AstOrder,
     AstFunc,
+    AstCond,
     AstConst
   } typ;
   union {
@@ -50,6 +51,17 @@ extern struct ast {
       struct sym *sym;
       struct scope body;
     } func;
+    struct {
+      enum condtyp {
+        CondNone,
+        CondIf,
+        CondWhile,
+        CondDo,
+        CondFor,
+        CondSwitch
+      } typ;
+      struct ast *cond, *body, *els;
+    } cond;
     struct cnst *cnst;
   } val;
 } tree;

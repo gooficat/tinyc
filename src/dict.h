@@ -11,12 +11,15 @@ enum keyword {
   KwFloat,
   KwDouble,
   KwVoid,
+
   KwStruct,
   KwUnion,
   KwEnum,
+
   KwVolatile,
   KwRegister,
   KwConst,
+
   KwAuto,
   KwStatic,
   KwExtern,
@@ -29,16 +32,19 @@ enum keyword {
   KwGoto,
 
   KwIf,
-  KwElse,
   KwWhile,
   KwDo,
   KwFor,
   KwSwitch,
+
+  KwElse,
+
   KwCase,
   KwDefault,
 
   KwSizeof
 };
+
 enum punctuator {
   PnBraceL,
   PnBraceR,

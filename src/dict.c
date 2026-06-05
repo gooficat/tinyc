@@ -12,9 +12,11 @@ char const *const KEYWORDS[] = {
 	"float",
 	"double",
 	"void",
+
 	"struct",
 	"union",
 	"enum",
+
 	"volatile",
 	"register",
 	"const",
@@ -23,16 +25,20 @@ char const *const KEYWORDS[] = {
 	"extern",
 	"inline",
 	"typedef",
+
 	"return",
 	"break",
 	"continue",
 	"goto",
+
 	"if",
-	"else",
 	"while",
 	"do",
 	"for",
 	"switch",
+
+	"else",
+
 	"case",
 	"default",
 	"sizeof",

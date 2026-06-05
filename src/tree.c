@@ -28,12 +28,50 @@ static void handle_expr(void) {
 }
 
 static void handle_decl(void) {
+	switch (tok.idx) {
+	case KwInt:
+	case KwSigned:
+	case KwUnsigned:
+	case KwShort:
+	case KwChar:
+	case KwLong:
+	case KwFloat:
+	case KwDouble:
+	case KwVoid:
+	case KwStruct:
+	case KwUnion:
+	case KwEnum:
+	case KwVolatile:
+	case KwRegister:
+	case KwConst:
+	case KwAuto:
+	case KwStatic:
+	case KwExtern:
+	case KwInline:
+	case KwTypedef:
+		break;
+	}
 }
 
 static void handle_ordr(void) {
+	switch (tok.idx) {
+	case KwReturn:
+	case KwBreak:
+	case KwContinue:
+	case KwGoto:
+		break;
+	}
 }
 
 static void handle_cond(void) {
+	switch (tok.idx) {
+	case KwIf:
+	case KwWhile:
+	case KwDo:
+	case KwFor:
+	case KwSwitch:
+		break;
+	}
 }
 
 static void handle_stmt(void) {
@@ -49,6 +87,10 @@ static void handle_stmt(void) {
 		if (tok.idx <= KwSwitch) {
 			handle_cond();
 			return;
+		}
+		if (tok.idx == KwElse) {
+			fprintf(stderr, "Else statement with no preceding if!");
+			exit(EXIT_FAILURE);
 		}
 		if (tok.idx < KwSizeof) {
 			fprintf(stderr, "This type of token cannot appear outside of switches!\n");
