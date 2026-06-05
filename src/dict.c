@@ -49,7 +49,7 @@ char const PUNCTUATORS[] = {
 	',',
 	':',
 	';',
-	NULL,
+	'\0',
 };
 
 char const *const OPERATORS[] = {
