@@ -9,7 +9,7 @@
 
 static FILE *in;
 static char *line, *skr;
-static size_t line_cap = 128;
+static size_t line_cap;
 struct tok tok;
 
 struct cnst *cnsts;
@@ -19,6 +19,7 @@ char **idens;
 size_t num_idens = 0;
 
 static void lxr_getline(void) {
+	line_cap = 128;
 	skr = fgets(line, line_cap, in);
 	while (skr && line[strlen(line) - 1] != '\n') {
 		size_t old = line_cap;
@@ -27,6 +28,8 @@ static void lxr_getline(void) {
 			return;
 		}
 	}
+	cnsts = malloc(1);
+	idens = malloc(1);
 }
 
 void lxr_init(FILE *f) {

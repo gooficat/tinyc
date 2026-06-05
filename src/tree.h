@@ -13,7 +13,7 @@ struct scope {
   struct scope *parnt;
 };
 
-struct ast {
+extern struct ast {
   enum {
     AstNone,
     AstScope,
@@ -52,6 +52,9 @@ struct ast {
     } func;
     struct cnst *cnst;
   } val;
-};
+} tree;
+
+void tree_parse(void);
+void tree_print(void);
 
 #endif
