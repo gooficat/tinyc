@@ -22,6 +22,7 @@ extern struct ast {
     AstOrder,
     AstFunc,
     AstCond,
+    AstRef,
     AstConst
   } typ;
   union {
@@ -62,6 +63,7 @@ extern struct ast {
       } typ;
       struct ast *cond, *body, *els;
     } cond;
+    struct sym *ref;
     struct cnst *cnst;
   } val;
 } tree;
