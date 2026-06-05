@@ -1,0 +1,57 @@
+#ifndef __TREE__H__
+#define __TREE__H__
+
+#include "dict.h"
+#include "val.h"
+#include <stddef.h>
+
+struct scope {
+  struct ast *nodes;
+  size_t num_nodes;
+  struct sym *syms;
+  size_t num_syms;
+  struct scope *parnt;
+};
+
+struct ast {
+  enum {
+    AstNone,
+    AstScope,
+    AstBinOp,
+    AstUnOp,
+    AstOrder,
+    AstFunc,
+    AstConst
+  } typ;
+  union {
+    struct scope scope;
+    struct {
+      enum operator operator;
+      struct ast *left, *right;
+    } binop;
+    struct {
+      enum operator operator;
+      struct ast *node;
+    } unop;
+    struct {
+      enum {
+        OrderNone,
+        OrderBreak,
+        OrderContinue,
+        OrderReturn,
+        OrderGoto
+      } ordr;
+      union {
+        struct ast *node;
+        struct sym *sym;
+      } val;
+    } order;
+    struct {
+      struct sym *sym;
+      struct scope body;
+    } func;
+    struct cnst *cnst;
+  } val;
+};
+
+#endif

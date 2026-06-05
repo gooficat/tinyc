@@ -36,7 +36,31 @@ void lxr_init(FILE *f) {
 	lxr_next();
 }
 
-void lxr_next(void) {
+void lxr_print(void) {
+	printf("Token:\n\t");
+	switch (tok.typ) {
+	case TokNone:
+		puts("End of stream");
+		break;
+	case TokConst:
+		printf("Constant of type %i\n", cnsts[tok.idx].typ);
+		break;
+	case TokKword:
+		printf("Keyword %s\n", KEYWORDS[tok.idx]);
+		break;
+	case TokIdent:
+		printf("Identifier %s\n", idens[tok.idx]);
+		break;
+	case TokPunc:
+		printf("Punctuator %c\n", PUNCTUATORS[tok.idx]);
+		break;
+	case TokOper:
+		printf("Operator %s\n", OPERATORS[tok.idx]);
+		break;
+	}
+}
+
+void lxr_next_(void) {
 	size_t j;
 rpt:
 	if (!skr) {

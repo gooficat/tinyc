@@ -16,6 +16,9 @@ extern char **idens;
 extern size_t num_idens;
 
 void lxr_init(FILE *f);
-void lxr_next(void);
+void lxr_print(void);
+
+void lxr_next_(void);
+#define lxr_next() lxr_next_(), lxr_print()
 
 #endif
