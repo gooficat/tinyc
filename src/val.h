@@ -13,12 +13,21 @@ struct cnst {
 };
 
 struct typ {
-  enum { TypeErr, TypeVoid, TypeInt, TypePtr, TypeFloat, TypeStruc } typ;
+  enum {
+    TypeNone,
+    TypeErr,
+    TypeVoid,
+    TypeInt,
+    TypePtr,
+    TypeFloat,
+    TypeStruc
+  } typ;
   size_t len;
   union {
     struct {
-      bool is_signed;
+      unsigned char signedness;
     } i;
+    struct typ *p;
   } val;
 };
 

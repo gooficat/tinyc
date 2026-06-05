@@ -1,12 +1,14 @@
 #include "tree.h"
 #include "dict.h"
 #include "lexer.h"
+#include "val.h"
 #include <malloc.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 struct ast tree;
-
 struct scope *current;
 
 static void init_scope(struct scope *scope, struct scope *parnt) {
@@ -27,29 +29,99 @@ static void handle_expr(void) {
 	gen_node(&current->nodes[l]);
 }
 
-static void handle_decl(void) {
+static void affect_typ(struct typ *typ) {
 	switch (tok.idx) {
 	case KwInt:
+		typ->typ = TypeInt;
+		return;
 	case KwSigned:
-	case KwUnsigned:
-	case KwShort:
-	case KwChar:
-	case KwLong:
-	case KwFloat:
-	case KwDouble:
-	case KwVoid:
-	case KwStruct:
-	case KwUnion:
-	case KwEnum:
-	case KwVolatile:
-	case KwRegister:
-	case KwConst:
-	case KwAuto:
-	case KwStatic:
-	case KwExtern:
-	case KwInline:
-	case KwTypedef:
+		if (!typ->val.i.signedness) {
+			typ->val.i.signedness = 2;
+			return;
+		}
 		break;
+	case KwUnsigned:
+		if (!typ->val.i.signedness) {
+			typ->val.i.signedness = 2;
+			return;
+		}
+		break;
+	case KwShort:
+		if (!typ->len) {
+			typ->len = sizeof(short);
+			return;
+		}
+		break;
+	case KwChar:
+		if (!typ->len) {
+			typ->len = sizeof(char);
+			return;
+		}
+		break;
+	case KwLong:
+		if (!typ->len) {
+			typ->len = sizeof(long);
+			return;
+		}
+		/*else if (typ->len == sizeof(long)) {
+			typ->typ = sizeof(long long);
+		}*/
+		break;
+	case KwFloat:
+		if (!typ->typ) {
+			typ->typ = TypeFloat;
+			if (!typ->len) {
+				typ->len = sizeof(float);
+				return;
+			}
+		}
+		break;
+	case KwDouble:
+		return;
+	case KwVoid:
+		return;
+	case KwStruct:
+		return;
+	case KwUnion:
+		return;
+	case KwEnum:
+		return;
+	case KwVolatile:
+		return;
+	case KwRegister:
+		return;
+	case KwConst:
+		return;
+	case KwAuto:
+		return;
+	case KwStatic:
+		return;
+	case KwExtern:
+		return;
+	case KwInline:
+		return;
+	}
+	fprintf(stderr, "Malformed type\n");
+	exit(EXIT_FAILURE);
+}
+
+static void handle_decl(void) {
+	struct typ *typ = malloc(sizeof(struct typ));
+	bool is_td = false;
+	memset(typ, 0, sizeof *typ);
+	while (tok.typ == TokKword) {
+		if (tok.idx == KwTypedef) {
+			is_td = true;
+		}
+		affect_typ(typ);
+		lxr_next();
+		if (tok.typ == TokOper && tok.idx == OpMul) {
+			struct typ *old = typ;
+			typ = malloc(sizeof(struct typ));
+			typ->typ = TypePtr;
+			typ->val.p = old;
+			lxr_next();
+		}
 	}
 }
 
