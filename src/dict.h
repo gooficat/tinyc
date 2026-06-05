@@ -22,10 +22,12 @@ enum keyword {
   KwExtern,
   KwInline,
   KwTypedef,
+
   KwReturn,
   KwBreak,
   KwContinue,
   KwGoto,
+
   KwIf,
   KwElse,
   KwWhile,
@@ -34,6 +36,7 @@ enum keyword {
   KwSwitch,
   KwCase,
   KwDefault,
+
   KwSizeof
 };
 enum punctuator {

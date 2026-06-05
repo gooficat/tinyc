@@ -1,7 +1,9 @@
 #include "tree.h"
 #include "dict.h"
-#include <corecrt_malloc.h>
+#include "lexer.h"
+#include <malloc.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 struct ast tree;
 
@@ -15,13 +17,56 @@ static void init_scope(struct scope *scope, struct scope *parnt) {
 	scope->num_nodes = 0;
 }
 
+void gen_node(struct ast *node) {
+	(void)node;
+}
+
+static void handle_expr(void) {
+	size_t l = current->num_nodes;
+	current->nodes = realloc(current->nodes, ++current->num_nodes);
+	gen_node(&current->nodes[l]);
+}
+
+static void handle_decl(void) {
+}
+
+static void handle_ordr(void) {
+}
+
+static void handle_cond(void) {
+}
+
 static void handle_stmt(void) {
+	if (tok.typ == TokKword) {
+		if (tok.idx <= KwTypedef) {
+			handle_decl();
+			return;
+		}
+		if (tok.idx <= KwGoto) {
+			handle_ordr();
+			return;
+		}
+		if (tok.idx <= KwSwitch) {
+			handle_cond();
+			return;
+		}
+		if (tok.idx < KwSizeof) {
+			fprintf(stderr, "This type of token cannot appear outside of switches!\n");
+			exit(EXIT_FAILURE);
+		}
+		fprintf(stderr, "Sizeof unimplemented\n");
+		exit(EXIT_FAILURE);
+	}
+	handle_expr();
 }
 
 void tree_parse(void) {
 	tree.typ = AstScope;
 	init_scope(&tree.val.scope, NULL);
 	current = &tree.val.scope;
+	while (tok.typ) {
+		handle_stmt();
+	}
 }
 
 /*

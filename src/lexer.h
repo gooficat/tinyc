@@ -5,7 +5,7 @@
 #include <stdio.h>
 
 extern struct tok {
-  enum { TokNone, TokConst, TokKword, TokIdent, TokPunc, TokOper } typ;
+  enum toktyp { TokNone, TokConst, TokKword, TokIdent, TokPunc, TokOper } typ;
   size_t idx;
 } tok;
 
