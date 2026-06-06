@@ -48,13 +48,13 @@ static void codegen_scope(struct scope *scop) {
 	size_t i;
 	cur = scop;
 	if (scop->num_syms) {
-		fprintf(out, "sub $%lu, %%esp\n", (unsigned long)scop->num_syms * 4); /*Aligned for now, TODO*/
+		fprintf(out, "\tsub $%lu, %%esp\n", (unsigned long)scop->num_syms * 4); /*Aligned for now, TODO*/
 	}
 	for (i = 0; i < scop->num_nodes; ++i) {
 		codegen_node(&scop->nodes[i]);
 	}
 	if (scop->num_syms) {
-		fprintf(out, "add $%lu, %%esp\n", (unsigned long)scop->num_syms * 4);
+		fprintf(out, "\tadd $%lu, %%esp\n", (unsigned long)scop->num_syms * 4);
 	}
 }
 
@@ -63,7 +63,7 @@ static void codegen_cnst(struct cnst *cnst) {
 	case ConstNone:
 		codegen_panic("No constant\n");
 	case ConstInt:
-		fprintf(out, "mov $%ld, %%eax\n", cnst->val.i);
+		fprintf(out, "\tmov $%ld, %%eax\n", cnst->val.i);
 		break;
 	case ConstFloat:
 	case ConstString:
@@ -90,9 +90,9 @@ void codegen_node(struct ast *ast) {
 		case OrderReturn:
 			codegen_node(ast->val.order.val.node);
 			if (cur->num_syms) {
-				fprintf(out, "add $%lu, %%esp\n", (unsigned long)cur->num_syms * 4);
+				fprintf(out, "\tadd $%lu, %%esp\n", (unsigned long)cur->num_syms * 4);
 			}
-			fprintf(out, "ret\n");
+			fprintf(out, "\tret\n");
 			break;
 		default:
 			codegen_panic("Unimplemented\n");
@@ -105,11 +105,11 @@ void codegen_node(struct ast *ast) {
 				ast->val.func.sym->name, ast->val.func.sym->name);
 		codegen_scope(&ast->val.func.body);
 		if (cur->num_syms) {
-			fprintf(out, "add $%lu, %%esp\n", (unsigned long)cur->num_syms * 4);
+			fprintf(out, "\tadd $%lu, %%esp\n", (unsigned long)cur->num_syms * 4);
 		}
 		fprintf(out,
-				"mov $0, %%eax\n"
-				"ret\n");
+				"\tmov $0, %%eax\n"
+				"\tret\n");
 		break;
 	case AstCond:
 		break;
