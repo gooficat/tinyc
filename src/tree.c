@@ -1,8 +1,8 @@
 #include "tree.h"
 #include "dict.h"
+#include "err.h"
 #include "lexer.h"
 #include "val.h"
-#include <corecrt_malloc.h>
 #include <malloc.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -42,17 +42,15 @@ static void init_scope(struct scope *scope, struct scope *parnt) {
 void gen_node(struct ast *node) {
 	switch (tok.typ) {
 	case TokNone:
-		fprintf(stderr, "Cannot gen node from nothing\n");
-		exit(EXIT_FAILURE);
+		parse_panic("Cannot gen node from nothing\n");
 	case TokConst:
 		node->typ = AstConst;
-		node->val.cnst = cnsts[tok.idx];
+		node->val.cnst = &cnsts[tok.idx];
 		lxr_next();
 		break;
 	case TokKword:
 		/* node->typ = AstCast;*/
-		fprintf(stderr, "Casting is not implemented yet\n");
-		exit(EXIT_FAILURE);
+		parse_panic("Casting is not implemented yet\n");
 		break;
 	case TokIdent:
 		node->typ = AstRef;
@@ -60,19 +58,17 @@ void gen_node(struct ast *node) {
 		lxr_next();
 		break;
 	case TokPunc:
-		fprintf(stderr, "Punc is not implemented yet\n");
-		exit(EXIT_FAILURE);
+		parse_panic("Punc is not implemented yet\n");
 		break;
 	case TokOper:
-		fprintf(stderr, "Operator is not implemented yet\n");
-		exit(EXIT_FAILURE);
+		parse_panic("Operator is not implemented yet\n");
 		break;
 	}
 }
 
 static void handle_expr(void) {
 	size_t l = cur->num_nodes;
-	cur->nodes = realloc(cur->nodes, ++cur->num_nodes);
+	cur->nodes = realloc(cur->nodes, ++cur->num_nodes * sizeof(struct ast));
 	gen_node(&cur->nodes[l]);
 }
 
@@ -135,12 +131,10 @@ static void affect_typ(struct typ *typ) {
 	case KwStatic:
 	case KwExtern:
 	case KwInline:
-		fprintf(stderr, "Error: unimplemented symbol in type specifier\n");
-		exit(EXIT_FAILURE);
+		parse_panic("Error: unimplemented symbol in type specifier");
 
 	default:
-		fprintf(stderr, "Error: wrong symbol in type specifier\n");
-		exit(EXIT_FAILURE);
+		parse_panic("Error: wrong symbol in type specifier");
 	}
 	lxr_next();
 	while (tok.typ == TokOper && tok.idx == OpMul) {
@@ -152,8 +146,7 @@ static void affect_typ(struct typ *typ) {
 	}
 	return;
 err:
-	fprintf(stderr, "Malformed type\n");
-	exit(EXIT_FAILURE);
+	parse_panic("Malformed type\n");
 }
 
 static void gen_expr(struct ast *node) {
@@ -174,8 +167,7 @@ static void parse_scope(void) {
 	lxr_next();
 	while (tok.typ != TokPunc || tok.idx != PnBraceR) {
 		if (tok.typ == TokNone) {
-			fprintf(stderr, "Unexpected end of input\n");
-			exit(EXIT_FAILURE);
+			parse_panic("Unexpected end of input\n");
 		}
 		while (tok.typ == TokPunc && tok.idx == PnSemi) {
 			lxr_next();
@@ -206,7 +198,7 @@ static void handle_decl(void) {
 		/*return;*/
 	}
 	if (tok.typ != TokIdent) {
-		fprintf(stderr, "Unexpected symbol after type");
+		parse_panic("Unexpected symbol after type\n");
 	}
 	sym->name = idens[tok.idx];
 	lxr_next();
@@ -234,22 +226,30 @@ static void handle_decl(void) {
 						continue;
 					}
 					if (tok.idx != PnComma) {
-						fprintf(stderr, "Expected comma\n");
-						exit(EXIT_FAILURE);
+						parse_panic("Expected comma\n");
 					}
 				}
 				lxr_next();
 				if (tok.typ == TokPunc && tok.idx == PnBraceL) {
 					struct ast fn;
+					size_t old;
 					fn.typ = AstFunc;
 					fn.val.func.sym = sym;
 					fn.val.func.body.parnt = cur;
+					fn.val.func.body.nodes = malloc(1);
+					fn.val.func.body.num_nodes = 0;
+					fn.val.func.body.syms = sym->typ->args;
+					fn.val.func.body.num_syms = sym->typ->num_args;
+					fn.val.func.body.parnt = cur;
+
 					cur = &fn.val.func.body;
-					cur->nodes = malloc(1);
-					cur->num_nodes = 0;
-					cur->syms = sym->typ->args;
-					cur->num_syms = sym->typ->num_args;
 					parse_scope();
+					cur = cur->parnt;
+
+					old = cur->num_nodes;
+					cur->nodes = realloc(cur->nodes, ++cur->num_nodes * sizeof(struct ast));
+					cur->nodes[old] = fn;
+					return;
 				}
 			}
 			lxr_next();
@@ -263,7 +263,7 @@ static void handle_decl(void) {
 		}
 		if (tok.typ == TokOper && tok.idx == OpAss) {
 			size_t old = cur->num_nodes;
-			cur->nodes = realloc(cur->nodes, ++cur->num_nodes);
+			cur->nodes = realloc(cur->nodes, ++cur->num_nodes * sizeof(struct ast));
 			lxr_next();
 			cur->nodes[old].typ = AstBinOp;
 			cur->nodes[old].val.binop.left = malloc(sizeof(struct ast));
@@ -281,8 +281,7 @@ static void handle_decl(void) {
 		lxr_next();
 	}
 	if (tok.idx != PnSemi) {
-		fprintf(stderr, "Unexpected symbol following symbol declaration\n");
-		exit(EXIT_FAILURE);
+		parse_panic("Unexpected symbol following symbol declaration");
 	}
 }
 static void handle_ordr(void) {
@@ -307,7 +306,7 @@ static void handle_ordr(void) {
 		ord.val.order.ordr = OrderGoto;
 		lxr_next();
 		/* TODO add label namespace or emulated namespace with flag */
-		fprintf(stderr, "Goto unimplemented\n");
+		parse_panic("Goto unimplemented");
 		break;
 	}
 }
@@ -338,15 +337,12 @@ static void handle_stmt(void) {
 			return;
 		}
 		if (tok.idx == KwElse) {
-			fprintf(stderr, "Else statement with no preceding if!");
-			exit(EXIT_FAILURE);
+			parse_panic("Else statement with no preceding if!");
 		}
 		if (tok.idx < KwSizeof) {
-			fprintf(stderr, "This type of token cannot appear outside of switches!\n");
-			exit(EXIT_FAILURE);
+			parse_panic("This type of token cannot appear outside of switches!");
 		}
-		fprintf(stderr, "Sizeof unimplemented\n");
-		exit(EXIT_FAILURE);
+		parse_panic("Sizeof unimplemented");
 	}
 	handle_expr();
 }
