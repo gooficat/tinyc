@@ -12,6 +12,10 @@
 struct ast tree;
 struct scope *cur;
 
+static int types_compatible(struct typ *a, struct typ *b) {
+	return 1; /* allow all for now :|< */
+}
+
 static void init_scope(struct scope *scope, struct scope *parnt) {
 	scope->parnt = parnt;
 	scope->syms = malloc(1);
@@ -34,74 +38,78 @@ static void affect_typ(struct typ *typ) {
 	switch (tok.idx) {
 	case KwInt:
 		typ->typ = TypeInt;
-		return;
+		break;
 	case KwSigned:
 		if (!typ->val.i.signedness) {
 			typ->val.i.signedness = 2;
-			return;
+			break;
 		}
-		break;
+		goto err;
 	case KwUnsigned:
 		if (!typ->val.i.signedness) {
 			typ->val.i.signedness = 2;
-			return;
+			break;
 		}
-		break;
+		goto err;
 	case KwShort:
 		if (!typ->len) {
 			typ->len = sizeof(short);
-			return;
+			break;
 		}
-		break;
+		goto err;
 	case KwChar:
 		if (!typ->len) {
 			typ->len = sizeof(char);
-			return;
+			break;
 		}
-		break;
+		goto err;
 	case KwLong:
 		if (!typ->len) {
 			typ->len = sizeof(long);
-			return;
+			break;
 		}
 		/*else if (typ->len == sizeof(long)) {
 			typ->typ = sizeof(long long);
 		}*/
-		break;
+		goto err;
 	case KwFloat:
 		if (!typ->typ) {
 			typ->typ = TypeFloat;
 			if (!typ->len) {
 				typ->len = sizeof(float);
-				return;
+				break;
 			}
 		}
-		break;
+		goto err;
 	case KwDouble:
-		return;
 	case KwVoid:
-		return;
 	case KwStruct:
-		return;
 	case KwUnion:
-		return;
 	case KwEnum:
-		return;
 	case KwVolatile:
-		return;
 	case KwRegister:
-		return;
 	case KwConst:
-		return;
 	case KwAuto:
-		return;
 	case KwStatic:
-		return;
 	case KwExtern:
-		return;
 	case KwInline:
-		return;
+		fprintf(stderr, "Error: unimplemented symbol in type specifier\n");
+		exit(EXIT_FAILURE);
+
+	default:
+		fprintf(stderr, "Error: wrong symbol in type specifier\n");
+		exit(EXIT_FAILURE);
 	}
+	lxr_next();
+	while (tok.typ == TokOper && tok.idx == OpMul) {
+		struct typ *prv = malloc(sizeof(struct typ));
+		*prv = *typ;
+		typ->typ = TypePtr;
+		typ->val.p = prv;
+		lxr_next();
+	}
+	return;
+err:
 	fprintf(stderr, "Malformed type\n");
 	exit(EXIT_FAILURE);
 }
@@ -130,16 +138,9 @@ static void handle_decl(void) {
 	while (tok.typ == TokKword) {
 		if (tok.idx == KwTypedef) {
 			is_td = true;
-		}
-		affect_typ(sym->typ);
-		lxr_next();
-		if (tok.typ == TokOper && tok.idx == OpMul) {
-			struct typ *old = sym->typ;
-			sym->typ = malloc(sizeof(struct typ));
-			sym->typ->typ = TypePtr;
-			sym->typ->val.p = old;
 			lxr_next();
 		}
+		affect_typ(sym->typ);
 	}
 	if (is_td) {
 		/*cur->syms.*/
@@ -152,43 +153,46 @@ static void handle_decl(void) {
 	}
 	sym->name = idens[tok.idx];
 	lxr_next();
-	if (tok.typ == TokPunc) {
-		if (tok.idx == PnSemi) {
-			return;
-		}
+	for (;;) {
 		if (tok.idx == PnParenL) {
-			struct ast fn;
-			fn.typ = AstFunc;
-			fn.val.func.sym = sym;
-			init_scope(&fn.val.func.body, cur);
+			sym->typ->args = malloc(1);
+			sym->typ->num_args = 0;
 			lxr_next();
 			while (tok.typ != TokPunc || tok.idx != PnParenR) {
-				size_t old = fn.val.scope.num_syms;
-				fn.val.scope.syms = realloc(fn.val.scope.syms, ++fn.val.scope.num_syms * sizeof(struct sym));
-				fn.val.scope.syms[old].typ = malloc(sizeof(struct typ));
+				size_t old = sym->typ->num_args;
+				sym->typ->args = realloc(sym->typ->args, ++sym->typ->num_args * sizeof(struct sym));
+				sym->typ->args[old].typ = malloc(sizeof(struct typ));
 
 				while (tok.typ == TokKword) {
-					affect_typ(fn.val.scope.syms[old].typ);
-					lxr_next();
-					if (tok.typ == TokOper && tok.idx == OpMul) {
-						struct typ *old = fn.val.scope.syms[old]->typ;
-						fn.val.scope.syms[old].typ = malloc(sizeof(struct typ));
-						fn.val.scope.syms[old].typ->typ = TypePtr;
-						fn.val.scope.syms[old].typ->val.p = old;
-						lxr_next();
-					}
+					affect_typ(sym->typ->args[old].typ);
 				}
 				if (tok.typ != TokIdent) {
-					fn.val.scope.syms[old].name = NULL;
+					sym->typ->args[old].name = NULL;
 				} else {
-					fn.val.scope.syms[old].name = idens[tok.idx];
+					sym->typ->args[old].name = idens[tok.idx];
 					lxr_next();
 				}
-				if (tok.typ == TokPunc && tok.idx != PnComma) {
-					fprintf(stderr, "Expected comma\n");
-					exit(EXIT_FAILURE);
+				if (tok.typ == TokPunc) {
+					if (tok.idx == PnParenR) {
+						continue;
+					}
+					if (tok.idx != PnComma) {
+						fprintf(stderr, "Expected comma\n");
+						exit(EXIT_FAILURE);
+					}
+				}
+				lxr_next();
+				if (tok.typ == TokPunc && tok.idx == PnBraceL) {
 				}
 			}
+			lxr_next();
+			if (tok.typ == TokPunc) {
+				if (tok.idx == PnSemi) {
+					lxr_next();
+					return;
+				}
+			}
+			lxr_next();
 		}
 		if (tok.typ == TokOper && tok.idx == OpAss) {
 			size_t old = cur->num_nodes;
@@ -199,133 +203,141 @@ static void handle_decl(void) {
 			cur->nodes[old].val.binop.left->typ = AstRef;
 			cur->nodes[old].val.binop.left->val.ref = sym;
 			cur->nodes[old].val.binop.operator = tok.idx; /*OpAss*/
+			lxr_next();
 			cur->nodes[old].val.binop.right = malloc(sizeof(struct ast));
 			gen_expr(cur->nodes[old].val.binop.right);
 			return;
 		}
+		if (tok.idx != PnComma) {
+			break;
+		}
+		lxr_next();
+	}
+	if (tok.idx != PnSemi) {
 		fprintf(stderr, "Unexpected symbol following symbol declaration\n");
+		exit(EXIT_FAILURE);
 	}
+}
+static void handle_ordr(void) {
+	switch (tok.idx) {
+	case KwReturn:
+	case KwBreak:
+	case KwContinue:
+	case KwGoto:
+		break;
+	}
+}
 
-	static void handle_ordr(void) {
-		switch (tok.idx) {
-		case KwReturn:
-		case KwBreak:
-		case KwContinue:
-		case KwGoto:
-			break;
+static void handle_cond(void) {
+	switch (tok.idx) {
+	case KwIf:
+	case KwWhile:
+	case KwDo:
+	case KwFor:
+	case KwSwitch:
+		break;
+	}
+}
+
+static void handle_stmt(void) {
+	if (tok.typ == TokKword) {
+		if (tok.idx <= KwTypedef) {
+			handle_decl();
+			return;
 		}
-	}
-
-	static void handle_cond(void) {
-		switch (tok.idx) {
-		case KwIf:
-		case KwWhile:
-		case KwDo:
-		case KwFor:
-		case KwSwitch:
-			break;
+		if (tok.idx <= KwGoto) {
+			handle_ordr();
+			return;
 		}
-	}
-
-	static void handle_stmt(void) {
-		if (tok.typ == TokKword) {
-			if (tok.idx <= KwTypedef) {
-				handle_decl();
-				return;
-			}
-			if (tok.idx <= KwGoto) {
-				handle_ordr();
-				return;
-			}
-			if (tok.idx <= KwSwitch) {
-				handle_cond();
-				return;
-			}
-			if (tok.idx == KwElse) {
-				fprintf(stderr, "Else statement with no preceding if!");
-				exit(EXIT_FAILURE);
-			}
-			if (tok.idx < KwSizeof) {
-				fprintf(stderr, "This type of token cannot appear outside of switches!\n");
-				exit(EXIT_FAILURE);
-			}
-			fprintf(stderr, "Sizeof unimplemented\n");
+		if (tok.idx <= KwSwitch) {
+			handle_cond();
+			return;
+		}
+		if (tok.idx == KwElse) {
+			fprintf(stderr, "Else statement with no preceding if!");
 			exit(EXIT_FAILURE);
 		}
-		handle_expr();
-	}
-
-	void tree_parse(void) {
-		tree.typ = AstScope;
-		init_scope(&tree.val.scope, NULL);
-		cur = &tree.val.scope;
-		while (tok.typ) {
-			handle_stmt();
+		if (tok.idx < KwSizeof) {
+			fprintf(stderr, "This type of token cannot appear outside of switches!\n");
+			exit(EXIT_FAILURE);
 		}
+		fprintf(stderr, "Sizeof unimplemented\n");
+		exit(EXIT_FAILURE);
 	}
+	handle_expr();
+}
 
-	/*
+void tree_parse(void) {
+	tree.typ = AstScope;
+	init_scope(&tree.val.scope, NULL);
+	cur = &tree.val.scope;
+	while (tok.typ) {
+		handle_stmt();
+	}
+}
+
+/*
 
 
 
-	*/
+*/
 
-	static void print_node(struct ast * node);
+static void print_node(struct ast *node);
 
-	static void print_scope(struct scope * scope) {
-		size_t i;
-		puts("Scope");
-		for (i = 0; i < scope->num_syms; ++i) {
-			printf("Symbol %s\n", scope->syms[i].name);
+static void print_scope(struct scope *scope) {
+	size_t i;
+	puts("Scope");
+	for (i = 0; i < scope->num_syms; ++i) {
+		printf("Symbol %s\n", scope->syms[i].name);
+	}
+	for (i = 0; i < scope->num_nodes; ++i) {
+		print_node(scope->nodes + i);
+	}
+}
+
+static void print_node(struct ast *node) {
+	switch (node->typ) {
+	case AstNone:
+		puts("Error: No node\n");
+		return;
+	case AstScope:
+		print_scope(&node->val.scope);
+		return;
+	case AstBinOp:
+		printf("Operation: %s\nLeft:\n", OPERATORS[node->val.binop.operator]);
+		print_node(node->val.binop.left);
+		printf("Right:\n");
+		print_node(node->val.binop.right);
+		return;
+	case AstUnOp:
+		printf("Operation: %s\n", OPERATORS[node->val.unop.operator]);
+		print_node(node->val.unop.node);
+		return;
+	case AstOrder:
+		printf("Order\n");
+		return;
+	case AstFunc:
+		printf("Function\n");
+		printf("Named %s\n", node->val.func.sym->name);
+		print_scope(&node->val.func.body);
+		return;
+	case AstCond:
+		printf("Conditional %i\n", node->val.cond.typ);
+		printf("Condition:\n");
+		print_node(node->val.cond.cond);
+		printf("Body:\n");
+		print_node(node->val.cond.body);
+		if (node->val.cond.els) {
+			printf("Else:\n");
+			print_node(node->val.cond.els);
 		}
-		for (i = 0; i < scope->num_nodes; ++i) {
-			print_node(scope->nodes + i);
-		}
+		return;
+	case AstConst:
+		printf("Constant of type %i\n", node->val.cnst->typ);
+		return;
 	}
+}
 
-	static void print_node(struct ast * node) {
-		switch (node->typ) {
-		case AstNone:
-			puts("Error: No node\n");
-			return;
-		case AstScope:
-			print_scope(&node->val.scope);
-			return;
-		case AstBinOp:
-			printf("Operation: %s\nLeft:\n", OPERATORS[node->val.binop.operator]);
-			print_node(node->val.binop.left);
-			printf("Right:\n");
-			print_node(node->val.binop.right);
-			return;
-		case AstUnOp:
-			printf("Operation: %s\n", OPERATORS[node->val.unop.operator]);
-			print_node(node->val.unop.node);
-			return;
-		case AstOrder:
-			printf("Order\n");
-			return;
-		case AstFunc:
-			printf("Function\n");
-			printf("Named %s\n", node->val.func.sym->name);
-			print_scope(&node->val.func.body);
-			return;
-		case AstCond:
-			printf("Conditional %i\n", node->val.cond.typ);
-			printf("Condition:\n");
-			print_node(node->val.cond.cond);
-			printf("Body:\n");
-			print_node(node->val.cond.body);
-			if (node->val.cond.els) {
-				printf("Else:\n");
-				print_node(node->val.cond.els);
-			}
-			return;
-		case AstConst:
-			printf("Constant of type %i\n", node->val.cnst->typ);
-			return;
-		}
-	}
-
-	void tree_print(void) {
-		print_node(&tree);
-	}
+void tree_print(void) {
+	print_node(&tree);
+}

@@ -29,6 +29,8 @@ struct typ {
     } i;
     struct typ *p;
   } val;
+  struct sym *args;
+  size_t num_args;
 };
 
 struct sym {
