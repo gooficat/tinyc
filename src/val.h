@@ -20,7 +20,8 @@ struct typ {
     TypeInt,
     TypePtr,
     TypeFloat,
-    TypeStruc
+    TypeStruc,
+    TypeLabel
   } typ;
   size_t len;
   union {

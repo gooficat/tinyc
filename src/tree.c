@@ -12,8 +12,23 @@
 struct ast tree;
 struct scope *cur;
 
+static void handle_stmt(void);
+
 static int types_compatible(struct typ *a, struct typ *b) {
 	return 1; /* allow all for now :|< */
+}
+
+static struct sym *find_sym(char const *name, struct scope *cur) {
+	size_t i;
+	for (i = 0; i < cur->num_syms; ++i) {
+		if (!strcmp(cur->syms[i].name, name)) {
+			return &cur->syms[i];
+		}
+	}
+	if (cur->parnt) {
+		return find_sym(name, cur->parnt);
+	}
+	return NULL;
 }
 
 static void init_scope(struct scope *scope, struct scope *parnt) {
@@ -25,7 +40,34 @@ static void init_scope(struct scope *scope, struct scope *parnt) {
 }
 
 void gen_node(struct ast *node) {
-	(void)node;
+	switch (tok.typ) {
+	case TokNone:
+		fprintf(stderr, "Cannot gen node from nothing\n");
+		exit(EXIT_FAILURE);
+	case TokConst:
+		node->typ = AstConst;
+		node->val.cnst = cnsts[tok.idx];
+		lxr_next();
+		break;
+	case TokKword:
+		/* node->typ = AstCast;*/
+		fprintf(stderr, "Casting is not implemented yet\n");
+		exit(EXIT_FAILURE);
+		break;
+	case TokIdent:
+		node->typ = AstRef;
+		node->val.ref = find_sym(idens[tok.idx], cur);
+		lxr_next();
+		break;
+	case TokPunc:
+		fprintf(stderr, "Punc is not implemented yet\n");
+		exit(EXIT_FAILURE);
+		break;
+	case TokOper:
+		fprintf(stderr, "Operator is not implemented yet\n");
+		exit(EXIT_FAILURE);
+		break;
+	}
 }
 
 static void handle_expr(void) {
@@ -128,6 +170,21 @@ static void gen_binop(struct ast *binop, struct ast *left) {
 	binop->val.binop.right = malloc(sizeof(struct ast));
 }
 
+static void parse_scope(void) {
+	lxr_next();
+	while (tok.typ != TokPunc || tok.idx != PnBraceR) {
+		if (tok.typ == TokNone) {
+			fprintf(stderr, "Unexpected end of input\n");
+			exit(EXIT_FAILURE);
+		}
+		while (tok.typ == TokPunc && tok.idx == PnSemi) {
+			lxr_next();
+		}
+		handle_stmt();
+	}
+	lxr_next();
+}
+
 static void handle_decl(void) {
 	struct sym *sym;
 	bool is_td;
@@ -183,6 +240,16 @@ static void handle_decl(void) {
 				}
 				lxr_next();
 				if (tok.typ == TokPunc && tok.idx == PnBraceL) {
+					struct ast fn;
+					fn.typ = AstFunc;
+					fn.val.func.sym = sym;
+					fn.val.func.body.parnt = cur;
+					cur = &fn.val.func.body;
+					cur->nodes = malloc(1);
+					cur->num_nodes = 0;
+					cur->syms = sym->typ->args;
+					cur->num_syms = sym->typ->num_args;
+					parse_scope();
 				}
 			}
 			lxr_next();
@@ -219,11 +286,28 @@ static void handle_decl(void) {
 	}
 }
 static void handle_ordr(void) {
+	struct ast ord;
+	ord.typ = AstOrder;
 	switch (tok.idx) {
 	case KwReturn:
+		ord.val.order.ordr = OrderReturn;
+		lxr_next();
+		ord.val.order.val.node = malloc(sizeof(struct ast));
+		gen_node(ord.val.order.val.node);
+		break;
 	case KwBreak:
+		ord.val.order.ordr = OrderBreak;
+		lxr_next();
+		break;
 	case KwContinue:
+		ord.val.order.ordr = OrderContinue;
+		lxr_next();
+		break;
 	case KwGoto:
+		ord.val.order.ordr = OrderGoto;
+		lxr_next();
+		/* TODO add label namespace or emulated namespace with flag */
+		fprintf(stderr, "Goto unimplemented\n");
 		break;
 	}
 }
@@ -335,6 +419,9 @@ static void print_node(struct ast *node) {
 	case AstConst:
 		printf("Constant of type %i\n", node->val.cnst->typ);
 		return;
+	case AstRef:
+		printf("Reference to symbol %s\n", node->val.ref->name);
+		break;
 	}
 }
 
