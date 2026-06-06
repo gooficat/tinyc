@@ -230,25 +230,24 @@ static void handle_decl(void) {
 			}
 			lxr_next();
 			if (tok.typ == TokPunc && tok.idx == PnBraceL) {
-				/*NOT BEING REACHED??*/
-				struct ast fn;
 				size_t old;
-				fn.typ = AstFunc;
-				fn.val.func.sym = sym;
-				fn.val.func.body.parnt = cur;
-				fn.val.func.body.nodes = malloc(1);
-				fn.val.func.body.num_nodes = 0;
-				fn.val.func.body.syms = sym->typ->args;
-				fn.val.func.body.num_syms = sym->typ->num_args;
-				fn.val.func.body.parnt = cur;
-
-				cur = &fn.val.func.body;
-				parse_scope();
-				cur = cur->parnt;
 
 				old = cur->num_nodes;
 				cur->nodes = realloc(cur->nodes, ++cur->num_nodes * sizeof(struct ast));
-				cur->nodes[old] = fn;
+
+				cur->nodes[old].typ = AstFunc;
+				cur->nodes[old].val.func.sym = sym;
+				cur->nodes[old].val.func.body.parnt = cur;
+				cur->nodes[old].val.func.body.nodes = malloc(1);
+				cur->nodes[old].val.func.body.num_nodes = 0;
+				cur->nodes[old].val.func.body.syms = sym->typ->args;
+				cur->nodes[old].val.func.body.num_syms = sym->typ->num_args;
+				cur->nodes[old].val.func.body.parnt = cur;
+
+				cur = &cur->nodes[old].val.func.body;
+				parse_scope();
+				cur = cur->parnt;
+
 				return;
 			}
 			lxr_next();
@@ -285,25 +284,26 @@ static void handle_decl(void) {
 	}
 }
 static void handle_ordr(void) {
-	struct ast ord;
-	ord.typ = AstOrder;
+	size_t old = cur->num_nodes;
+	cur->nodes = realloc(cur->nodes, ++cur->num_nodes * sizeof(struct ast));
+	cur->nodes[old].typ = AstOrder;
 	switch (tok.idx) {
 	case KwReturn:
-		ord.val.order.ordr = OrderReturn;
+		cur->nodes[old].val.order.ordr = OrderReturn;
 		lxr_next();
-		ord.val.order.val.node = malloc(sizeof(struct ast));
-		gen_node(ord.val.order.val.node);
+		cur->nodes[old].val.order.val.node = malloc(sizeof(struct ast));
+		gen_node(cur->nodes[old].val.order.val.node);
 		break;
 	case KwBreak:
-		ord.val.order.ordr = OrderBreak;
+		cur->nodes[old].val.order.ordr = OrderBreak;
 		lxr_next();
 		break;
 	case KwContinue:
-		ord.val.order.ordr = OrderContinue;
+		cur->nodes[old].val.order.ordr = OrderContinue;
 		lxr_next();
 		break;
 	case KwGoto:
-		ord.val.order.ordr = OrderGoto;
+		cur->nodes[old].val.order.ordr = OrderGoto;
 		lxr_next();
 		/* TODO add label namespace or emulated namespace with flag */
 		parse_panic("Goto unimplemented");
