@@ -150,12 +150,6 @@ err:
 	parse_panic("Malformed type");
 }
 
-static void gen_expr(struct ast *node) {
-	if (tok.typ == TokOper) {
-		/*gen_unary*/
-	}
-}
-
 static void gen_binop(struct ast *binop, struct ast *left) {
 	binop->typ = AstBinOp;
 	lxr_next();
@@ -166,7 +160,6 @@ static void gen_binop(struct ast *binop, struct ast *left) {
 
 static void parse_scope(void) {
 	lxr_next();
-	struct tok *ttok = &tok;
 	while (tok.typ != TokPunc || tok.idx != PnBraceR) {
 		if (tok.typ == TokNone) {
 			parse_panic("Unexpected end of input\n");
@@ -278,7 +271,7 @@ static void handle_decl(void) {
 			cur->nodes[old].val.binop.operator = tok.idx; /*OpAss*/
 			lxr_next();
 			cur->nodes[old].val.binop.right = malloc(sizeof(struct ast));
-			gen_expr(cur->nodes[old].val.binop.right);
+			gen_node(cur->nodes[old].val.binop.right);
 			return;
 		}
 		if (tok.idx != PnComma) {
@@ -374,7 +367,7 @@ static void print_node(struct ast *node);
 
 static void print_scope(struct scope *scope) {
 	size_t i;
-	printf("Scope: %i syms, %i nodes\n", scope->num_syms, scope->num_nodes);
+	printf("Scope: %zu syms, %zu nodes\n", scope->num_syms, scope->num_nodes);
 	for (i = 0; i < scope->num_syms; ++i) {
 		printf("Symbol %s\n", scope->syms[i].name);
 	}
