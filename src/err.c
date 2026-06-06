@@ -5,7 +5,12 @@
 #include <stdlib.h>
 
 void parse_panic(char const *msg) {
-	struct tok *tokk = &tok;
+	fflush(stdout);
+	fputs(msg, stderr);
+	exit(EXIT_FAILURE);
+}
+
+void codegen_panic(char const *msg) {
 	fflush(stdout);
 	fputs(msg, stderr);
 	exit(EXIT_FAILURE);
