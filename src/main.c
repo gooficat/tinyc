@@ -1,7 +1,6 @@
 #include "dict.h"
 #include "lexer.h"
 #include "tree.h"
-#include "val.h"
 #include <stdio.h>
 
 int main(void) {

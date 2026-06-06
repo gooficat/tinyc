@@ -4,7 +4,6 @@
 #include "lexer.h"
 #include "val.h"
 #include <malloc.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -175,14 +174,14 @@ static void parse_scope(void) {
 
 static void handle_decl(void) {
 	struct sym *sym;
-	bool is_td;
-	is_td = false;
+	unsigned char is_td;
+	is_td = 0;
 	sym = malloc(sizeof(struct sym));
 	sym->typ = malloc(sizeof(struct typ));
 	memset(sym->typ, 0, sizeof(struct typ));
 	while (tok.typ == TokKword) {
 		if (tok.idx == KwTypedef) {
-			is_td = true;
+			is_td = 1;
 			lxr_next();
 		}
 		affect_typ(sym->typ);
