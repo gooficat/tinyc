@@ -19,7 +19,6 @@ char **idens;
 size_t num_idens = 0;
 
 static void lxr_getline(void) {
-	line_cap = 128;
 	skr = fgets(line, line_cap, in);
 	while (skr && line[strlen(line) - 1] != '\n') {
 		size_t old = line_cap;
@@ -28,13 +27,14 @@ static void lxr_getline(void) {
 			return;
 		}
 	}
-	cnsts = malloc(1);
-	idens = malloc(1);
 }
 
 void lxr_init(FILE *f) {
 	in = f;
+	line_cap = 128;
 	line = malloc(line_cap);
+	cnsts = malloc(1);
+	idens = malloc(1);
 	lxr_getline();
 	lxr_next();
 }
@@ -61,6 +61,7 @@ void lxr_print(void) {
 		printf("Operator %s\n", OPERATORS[tok.idx]);
 		break;
 	}
+	fflush(stdout);
 }
 
 void lxr_next_(void) {
@@ -69,8 +70,12 @@ rpt:
 	if (!skr) {
 		tok.typ = TokNone;
 		puts("Finished reading from file");
+		fflush(stdout);
 		fclose(in);
-		free(line);
+		if (line) {
+			free(line);
+			line = NULL;
+		}
 		return;
 	}
 	if (!*skr) {

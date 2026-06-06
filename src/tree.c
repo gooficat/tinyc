@@ -42,7 +42,7 @@ static void init_scope(struct scope *scope, struct scope *parnt) {
 void gen_node(struct ast *node) {
 	switch (tok.typ) {
 	case TokNone:
-		parse_panic("Cannot gen node from nothing\n");
+		parse_panic("Cannot gen node from nothing");
 	case TokConst:
 		node->typ = AstConst;
 		node->val.cnst = &cnsts[tok.idx];
@@ -57,11 +57,12 @@ void gen_node(struct ast *node) {
 		node->val.ref = find_sym(idens[tok.idx], cur);
 		lxr_next();
 		break;
-	case TokPunc:
-		parse_panic("Punc is not implemented yet\n");
+	case TokPunc: {
+		parse_panic("Punc is not implemented yet");
 		break;
+	}
 	case TokOper:
-		parse_panic("Operator is not implemented yet\n");
+		parse_panic("Operator is not implemented yet");
 		break;
 	}
 }
@@ -146,7 +147,7 @@ static void affect_typ(struct typ *typ) {
 	}
 	return;
 err:
-	parse_panic("Malformed type\n");
+	parse_panic("Malformed type");
 }
 
 static void gen_expr(struct ast *node) {
@@ -165,12 +166,14 @@ static void gen_binop(struct ast *binop, struct ast *left) {
 
 static void parse_scope(void) {
 	lxr_next();
+	struct tok *ttok = &tok;
 	while (tok.typ != TokPunc || tok.idx != PnBraceR) {
 		if (tok.typ == TokNone) {
 			parse_panic("Unexpected end of input\n");
 		}
-		while (tok.typ == TokPunc && tok.idx == PnSemi) {
+		if (tok.typ == TokPunc && tok.idx == PnSemi) {
 			lxr_next();
+			continue;
 		}
 		handle_stmt();
 	}
@@ -193,22 +196,23 @@ static void handle_decl(void) {
 	}
 	if (is_td) {
 		/*cur->syms.*/
-		puts("Typedef unimplemented\n");
-		exit(EXIT_FAILURE);
+		parse_panic("Typedef unimplemented");
 		/*return;*/
 	}
 	if (tok.typ != TokIdent) {
-		parse_panic("Unexpected symbol after type\n");
+		parse_panic("Unexpected symbol after type");
 	}
 	sym->name = idens[tok.idx];
 	lxr_next();
 	for (;;) {
 		if (tok.idx == PnParenL) {
+			fprintf(stdout, "Function decl\n");
 			sym->typ->args = malloc(1);
 			sym->typ->num_args = 0;
 			lxr_next();
 			while (tok.typ != TokPunc || tok.idx != PnParenR) {
 				size_t old = sym->typ->num_args;
+				fprintf(stdout, "Arg\n");
 				sym->typ->args = realloc(sym->typ->args, ++sym->typ->num_args * sizeof(struct sym));
 				sym->typ->args[old].typ = malloc(sizeof(struct typ));
 
@@ -223,34 +227,36 @@ static void handle_decl(void) {
 				}
 				if (tok.typ == TokPunc) {
 					if (tok.idx == PnParenR) {
-						continue;
+						break;
 					}
 					if (tok.idx != PnComma) {
-						parse_panic("Expected comma\n");
+						parse_panic("Expected comma");
 					}
 				}
 				lxr_next();
-				if (tok.typ == TokPunc && tok.idx == PnBraceL) {
-					struct ast fn;
-					size_t old;
-					fn.typ = AstFunc;
-					fn.val.func.sym = sym;
-					fn.val.func.body.parnt = cur;
-					fn.val.func.body.nodes = malloc(1);
-					fn.val.func.body.num_nodes = 0;
-					fn.val.func.body.syms = sym->typ->args;
-					fn.val.func.body.num_syms = sym->typ->num_args;
-					fn.val.func.body.parnt = cur;
+			}
+			lxr_next();
+			if (tok.typ == TokPunc && tok.idx == PnBraceL) {
+				/*NOT BEING REACHED??*/
+				struct ast fn;
+				size_t old;
+				fn.typ = AstFunc;
+				fn.val.func.sym = sym;
+				fn.val.func.body.parnt = cur;
+				fn.val.func.body.nodes = malloc(1);
+				fn.val.func.body.num_nodes = 0;
+				fn.val.func.body.syms = sym->typ->args;
+				fn.val.func.body.num_syms = sym->typ->num_args;
+				fn.val.func.body.parnt = cur;
 
-					cur = &fn.val.func.body;
-					parse_scope();
-					cur = cur->parnt;
+				cur = &fn.val.func.body;
+				parse_scope();
+				cur = cur->parnt;
 
-					old = cur->num_nodes;
-					cur->nodes = realloc(cur->nodes, ++cur->num_nodes * sizeof(struct ast));
-					cur->nodes[old] = fn;
-					return;
-				}
+				old = cur->num_nodes;
+				cur->nodes = realloc(cur->nodes, ++cur->num_nodes * sizeof(struct ast));
+				cur->nodes[old] = fn;
+				return;
 			}
 			lxr_next();
 			if (tok.typ == TokPunc) {
@@ -260,9 +266,9 @@ static void handle_decl(void) {
 				}
 			}
 			lxr_next();
-		}
-		if (tok.typ == TokOper && tok.idx == OpAss) {
+		} else if (tok.typ == TokOper && tok.idx == OpAss) {
 			size_t old = cur->num_nodes;
+			fprintf(stdout, "Assignment\n");
 			cur->nodes = realloc(cur->nodes, ++cur->num_nodes * sizeof(struct ast));
 			lxr_next();
 			cur->nodes[old].typ = AstBinOp;
@@ -276,6 +282,7 @@ static void handle_decl(void) {
 			return;
 		}
 		if (tok.idx != PnComma) {
+			fprintf(stdout, "Not comma\n");
 			break;
 		}
 		lxr_next();
@@ -354,6 +361,7 @@ void tree_parse(void) {
 	while (tok.typ) {
 		handle_stmt();
 	}
+	fprintf(stdout, "Finished parsing\n");
 }
 
 /*
@@ -366,7 +374,7 @@ static void print_node(struct ast *node);
 
 static void print_scope(struct scope *scope) {
 	size_t i;
-	puts("Scope");
+	printf("Scope: %i syms, %i nodes\n", scope->num_syms, scope->num_nodes);
 	for (i = 0; i < scope->num_syms; ++i) {
 		printf("Symbol %s\n", scope->syms[i].name);
 	}
@@ -379,28 +387,28 @@ static void print_node(struct ast *node) {
 	switch (node->typ) {
 	case AstNone:
 		puts("Error: No node\n");
-		return;
+		break;
 	case AstScope:
 		print_scope(&node->val.scope);
-		return;
+		break;
 	case AstBinOp:
 		printf("Operation: %s\nLeft:\n", OPERATORS[node->val.binop.operator]);
 		print_node(node->val.binop.left);
 		printf("Right:\n");
 		print_node(node->val.binop.right);
-		return;
+		break;
 	case AstUnOp:
 		printf("Operation: %s\n", OPERATORS[node->val.unop.operator]);
 		print_node(node->val.unop.node);
-		return;
+		break;
 	case AstOrder:
 		printf("Order\n");
-		return;
+		break;
 	case AstFunc:
 		printf("Function\n");
 		printf("Named %s\n", node->val.func.sym->name);
 		print_scope(&node->val.func.body);
-		return;
+		break;
 	case AstCond:
 		printf("Conditional %i\n", node->val.cond.typ);
 		printf("Condition:\n");
@@ -411,16 +419,18 @@ static void print_node(struct ast *node) {
 			printf("Else:\n");
 			print_node(node->val.cond.els);
 		}
-		return;
+		break;
 	case AstConst:
 		printf("Constant of type %i\n", node->val.cnst->typ);
-		return;
+		break;
 	case AstRef:
 		printf("Reference to symbol %s\n", node->val.ref->name);
 		break;
 	}
+	fflush(stdout);
 }
 
 void tree_print(void) {
+	fflush(stdout);
 	print_node(&tree);
 }
