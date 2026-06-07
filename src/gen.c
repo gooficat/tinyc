@@ -23,10 +23,11 @@ void codegen_init(FILE *file) {
 static unsigned long rec_find_depth(struct scope *scop, char const *sym, struct memloc *ml, unsigned long dep) {
 	size_t i;
 	for (i = 0; i < scop->num_syms; ++i) {
+		/*if (scop->syms[i].mem == MemStk)*/
 		if (!strcmp(sym, scop->syms[i].name)) {
 			return dep;
 		}
-		dep += 4; /*32 bit (4 byte) width*/
+		dep += ALIGN_SIZE;
 	}
 	return rec_find_depth(scop->parnt, sym, ml, dep);
 }
@@ -44,14 +45,14 @@ static void codegen_scope(struct scope *scop) {
 	cur = scop;
 	/* this doesnt account for external and static syms
 	if (scop->num_syms) {
-		fprintf(out, "\tsub $%lu, %%esp\n", (unsigned long)scop->num_syms * 4); Aligned for now, TODO
+		fprintf(out, "\tsub $%lu, %%esp\n", (unsigned long)scop->num_syms * ALIGN_SIZE); Aligned for now, TODO
 	 }
 	*/
 	for (i = 0; i < scop->num_nodes; ++i) {
 		codegen_node(&scop->nodes[i]);
 	} /*
 	 if (scop->num_syms) {
-		 fprintf(out, "\tadd $%lu, %%esp\n", (unsigned long)scop->num_syms * 4);
+		 fprintf(out, "\tadd $%lu, %%esp\n", (unsigned long)scop->num_syms * ALIGN_SIZE);
 	 }*/
 }
 
@@ -89,7 +90,7 @@ void codegen_node(struct ast *ast) {
 		case OrderReturn:
 			codegen_node(ast->val.order.val.node);
 			if (cur->num_syms) {
-				fprintf(out, "\tadd $%lu, %%esp\n", (unsigned long)cur->num_syms * 4);
+				fprintf(out, "\tadd $%lu, %%esp\n", (unsigned long)cur->num_syms * ALIGN_SIZE); /*TODO make sure bigger types count*/
 			}
 			fprintf(out, "\tret\n");
 			break;
@@ -104,7 +105,7 @@ void codegen_node(struct ast *ast) {
 				ast->val.func.sym->name, ast->val.func.sym->name);
 		codegen_scope(&ast->val.func.body);
 		if (cur->num_syms) {
-			fprintf(out, "\tadd $%lu, %%esp\n", (unsigned long)cur->num_syms * 4);
+			fprintf(out, "\tadd $%lu, %%esp\n", (unsigned long)cur->num_syms * ALIGN_SIZE); /*TODO bigger types*/
 		}
 		fprintf(out,
 				"\tmov $0, %%eax\n"
@@ -135,7 +136,7 @@ void codegen_node(struct ast *ast) {
 		if (ast->val.call.args.num_nodes) {
 			fprintf(out,
 					"\tadd $%lu, %%esp\n",
-					(unsigned long)ast->val.call.args.num_nodes * 4);
+					(unsigned long)ast->val.call.args.num_nodes * ALIGN_SIZE); /*TODO bigger types*/
 		}
 		break;
 

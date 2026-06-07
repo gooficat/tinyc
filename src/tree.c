@@ -1,6 +1,7 @@
 #include "tree.h"
 #include "dict.h"
 #include "err.h"
+#include "gen.h"
 #include "lexer.h"
 #include "val.h"
 #include <malloc.h>
@@ -124,7 +125,7 @@ static void affect_typ(struct typ *typ) {
 		goto err;
 	case KwShort:
 		if (!typ->len) {
-			typ->len = sizeof(short);
+			typ->len = SHORT_SIZE;
 			break;
 		}
 		goto err;
@@ -132,14 +133,14 @@ static void affect_typ(struct typ *typ) {
 		if (!typ->typ) {
 			typ->typ = TypeChar;
 			if (!typ->len) {
-				typ->len = sizeof(char);
+				typ->len = CHAR_SIZE;
 				break;
 			}
 		}
 		goto err;
 	case KwLong:
 		if (!typ->len) {
-			typ->len = sizeof(long);
+			typ->len = LONG_SIZE;
 			break;
 		}
 		/*else if (typ->len == sizeof(long)) {
@@ -150,7 +151,7 @@ static void affect_typ(struct typ *typ) {
 		if (!typ->typ) {
 			typ->typ = TypeFloat;
 			if (!typ->len) {
-				typ->len = sizeof(float);
+				typ->len = FLOAT_SIZE;
 				break;
 			}
 		}
