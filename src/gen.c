@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <vadefs.h>
+#include <vcruntime.h>
 
 static FILE *out;
 static struct scope *cur;
@@ -23,40 +24,70 @@ void codegen_init(FILE *file) {
 }
 
 /*eventually labels may need a similar func*/
-/*
+
 static unsigned long rec_find_depth(struct scope *scop, char const *sym, struct memloc *ml, unsigned long dep) {
 	size_t i;
 	for (i = 0; i < scop->num_syms; ++i) {
 		if (scop->syms[i].mem == MemStk) {
 		}
-if (!strcmp(sym, scop->syms[i].name)) {
-	return dep;
-}
-dep += ALIGN_SIZE;
-}
-return rec_find_depth(scop->parnt, sym, ml, dep);
-}
-*/
-
-/*
-static void find_depth(struct scope *scop, char const *sym, struct memloc *ml) {
-	unsigned long i = 0;
-	ml->typ = MemNone;
-	while (!ml->typ) {
-		i = rec_find_depth(scop, sym, ml, i);
+		if (!strcmp(sym, scop->syms[i].name)) {
+			return dep;
+		}
+		dep += ALIGN_SIZE;
 	}
-}*/
+	return rec_find_depth(scop->parnt, sym, ml, dep);
+}
+
+static long find_depth(struct scope *scop, char const *sym) {
+	struct memloc ml;
+	unsigned long i = 0;
+	ml.typ = MemNone;
+	while (!ml.typ) {
+		i = rec_find_depth(scop, sym, &ml, i);
+	}
+	return ml.val.dep; /*???? TODO ????*/
+}
+
+void gen_lvalue(struct ast *ast) {
+	if (ast->typ == AstUnOp) {
+		/**/
+		return;
+	}
+	if (ast->typ == AstRef) {
+		switch (ast->val.ref->mem) {
+		default:
+			codegen_panic("Errorful memory\n");
+		case MemStk:
+			fprintf(out, "\tlea %ld(%%esp), %%eax", find_depth(cur, ast->val.ref->name));
+			break; /*I have lost the plot entirely*/
+		case MemStat:
+		case MemExtrn:
+			fprintf(out, ".extern %s\n", ast->val.ref->name);
+			fprintf(out, "\tlea %s, %%eax\n", ast->val.ref->name);
+			break;
+		}
+		return;
+	}
+}
 
 static void codegen_binop(struct ast *ast) {
 	/*
 	TODO assignments, structs. Parser will need a rework to allow structs.
 	May it be best to treat it as punctuation instead of operators?
-	if (ast.vasst->val.binop.operator == OpAss) {
+*/
+	if (ast->val.binop.operator == OpAss) {
+		/*They are just stack and static now so no need for this. besides, if i do registers, an enum + table may make more sense		char rvbuf[RVAL_MAX];*/
+		gen_lvalue(ast->val.binop.left);
+		fprintf(out, "\tpush %%eax\n"); /*TODO non-register values*/
+		codegen_node(ast->val.binop.right);
+		fprintf(out, "\tpop %%edx\n"); /*TODO non-register values*/
+		fprintf(out, "\tmov %%eax, (%%edx)\n");
 		return;
-	} else if (ast->val.binop.operator == OpDot) {
+	} /*
+		  else if (ast->val.binop.operator == OpDot) {
 
-	} else if (ast->val.binop.operator == OpArrow) {
-	}*/
+	 } else if (ast->val.binop.operator == OpArrow) {
+	 }*/
 	codegen_node(ast->val.binop.left);
 	fprintf(out, "\tpush %%eax\n");
 	codegen_node(ast->val.binop.right);
@@ -131,20 +162,34 @@ static void codegen_binop(struct ast *ast) {
 	}
 }
 
+static unsigned long scope_stack(struct scope *scop) {
+	unsigned long s;
+	size_t i;
+	s = 0;
+	for (i = 0; i < scop->num_syms; ++i) {
+		if (scop->syms[i].mem == MemStk) {
+			s += ALIGN_SIZE; /*TODO bigger symbols*/
+		}
+	}
+	return s;
+}
+
 static void codegen_scope(struct scope *scop) {
 	size_t i;
 	cur = scop;
-	/* this doesnt account for external and static syms
-	if (scop->num_syms) {
-		fprintf(out, "\tsub $%lu, %%esp\n"); Aligned for now, TODO
-	 }
-	*/
+	/* this doesnt account for external and static syms*/
+	i = scope_stack(scop);
+	if (i) {
+		fprintf(out, "\tsub $%lu, %%esp\n", (unsigned long)i); /*Aligned for now, TODO*/
+	}
 	for (i = 0; i < scop->num_nodes; ++i) {
 		codegen_node(&scop->nodes[i]);
-	} /*
-	 if (scop->num_syms) {
-		 fprintf(out, "\tadd $%lu, %%esp\n");
-	 }*/
+	}
+	i = scope_stack(scop);
+	if (i) {
+		fprintf(out, "\tadd $%lu, %%esp\n", (unsigned long)i);
+	}
+	cur = scop->parnt;
 }
 
 static void codegen_cnst(struct cnst *cnst) {
@@ -180,9 +225,14 @@ void codegen_node(struct ast *ast) {
 		switch (ast->val.order.ordr) {
 		case OrderReturn:
 			codegen_node(ast->val.order.val.node);
-			if (cur->num_syms) {																			   /*TODO account for statics*/
-				fprintf(out, "\tadd $%lu, %%esp\n", (unsigned long)ast->val.call.args.num_nodes * ALIGN_SIZE); /*TODO bigger types*/
-																											   /*TODO make sure bigger types count*/
+			{
+				unsigned long i = scope_stack(cur);
+				if (i) { /*TODO account for statics*/
+					fprintf(out, "\tadd $%lu, %%esp\n",
+							i);
+					/*TODO bigger types*/
+					/*TODO make sure bigger types count*/
+				}
 			}
 			fprintf(out, "\tret\n");
 			break;
@@ -196,9 +246,6 @@ void codegen_node(struct ast *ast) {
 				"%s:\n",
 				ast->val.func.sym->name, ast->val.func.sym->name);
 		codegen_scope(&ast->val.func.body);
-		if (cur->num_syms) {
-			fprintf(out, "\tadd $%ld, %%esp\n", (unsigned long)ast->val.func.body.num_syms * 4); /*TODO bigger types*/
-		}
 		fprintf(out, /*TODO non register returns*/
 				"\tmov $0, %%eax\n"
 				"\tret\n");

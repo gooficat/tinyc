@@ -6,10 +6,10 @@
 
 int main(void) {
 	puts("TinyC minimal C compiler");
-	lxr_init(fopen("test/3.c", "r"));
+	lxr_init(fopen("test/4.c", "r"));
 	tree_parse();
 	tree_print();
-	codegen_init(fopen("bin/3.s", "w"));
+	codegen_init(fopen("bin/4.s", "w"));
 	codegen_tree();
 	return 0;
 }

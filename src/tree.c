@@ -282,6 +282,7 @@ static void handle_decl(void) {
 	lxr_next();
 	for (;;) {
 		if (tok.idx == PnParenL) {
+			sym->mem = MemStat;
 			dbg_print("Function decl\n");
 			sym->typ->args = malloc(1);
 			sym->typ->num_args = 0;
@@ -341,26 +342,33 @@ static void handle_decl(void) {
 					goto finish;
 				}
 			}
-		} else if (tok.typ == TokOper && tok.idx == OpAss) {
-			size_t old = cur->num_nodes;
-			dbg_print("Assignment\n");
-			cur->nodes = realloc(cur->nodes, ++cur->num_nodes * sizeof(struct ast));
+		} else {
+			if (cur->parnt) {
+				sym->mem = MemStk;
+			} else {
+				sym->mem = MemStat;
+			}
+			if (tok.typ == TokOper && tok.idx == OpAss) {
+				size_t old = cur->num_nodes;
+				dbg_print("Assignment\n");
+				cur->nodes = realloc(cur->nodes, ++cur->num_nodes * sizeof(struct ast));
+				lxr_next();
+				cur->nodes[old].typ = AstBinOp;
+				cur->nodes[old].val.binop.left = malloc(sizeof(struct ast));
+				cur->nodes[old].val.binop.left->typ = AstRef;
+				cur->nodes[old].val.binop.left->val.ref = sym;
+				cur->nodes[old].val.binop.operator = tok.idx; /*OpAss*/
+				lxr_next();
+				cur->nodes[old].val.binop.right = malloc(sizeof(struct ast));
+				gen_expr(cur->nodes[old].val.binop.right);
+				goto finish;
+			}
+			if (tok.idx != PnComma) {
+				dbg_print("Not comma\n");
+				break;
+			}
 			lxr_next();
-			cur->nodes[old].typ = AstBinOp;
-			cur->nodes[old].val.binop.left = malloc(sizeof(struct ast));
-			cur->nodes[old].val.binop.left->typ = AstRef;
-			cur->nodes[old].val.binop.left->val.ref = sym;
-			cur->nodes[old].val.binop.operator = tok.idx; /*OpAss*/
-			lxr_next();
-			cur->nodes[old].val.binop.right = malloc(sizeof(struct ast));
-			gen_node(cur->nodes[old].val.binop.right);
-			goto finish;
 		}
-		if (tok.idx != PnComma) {
-			dbg_print("Not comma\n");
-			break;
-		}
-		lxr_next();
 	}
 	if (tok.idx != PnSemi) {
 		parse_panic("Unexpected symbol following symbol declaration");
