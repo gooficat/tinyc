@@ -2,7 +2,6 @@
 #include "err.h"
 #include "lexer.h"
 #include "val.h"
-#include <corecrt_wstdio.h>
 #include <stdio.h>
 #include <string.h>
 
