@@ -3,7 +3,6 @@
 #include "err.h"
 #include "lexer.h"
 #include "val.h"
-#include <corecrt_malloc.h>
 #include <malloc.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,7 +14,7 @@ struct scope *cur;
 static void handle_stmt(void);
 
 static int types_compatible(struct typ *a, struct typ *b) {
-	return 1; /* allow all for now :|< */
+	return 1; /* allow all for now >:| */
 }
 
 static struct sym *find_sym(char const *name, struct scope *cur) {
@@ -70,6 +69,7 @@ void gen_node(struct ast *node) {
 		case PnParenL: {
 			{
 				struct ast old = *node;
+				fprintf(stdout, "This is a call\n");
 				node->typ = AstCall;
 				node->val.call.of = malloc(sizeof(struct ast));
 				*node->val.call.of = old;
@@ -79,9 +79,9 @@ void gen_node(struct ast *node) {
 			lxr_next();
 			if (tok.typ != TokPunc || tok.idx != PnParenR) {
 			rpt:
-				size_t old = cur->num_nodes;
-				cur->nodes = realloc(cur->nodes, ++cur->num_nodes * sizeof(struct ast));
-				gen_node(&cur->nodes[old]);
+				size_t old = node->val.call.args.num_nodes;
+				node->val.call.args.nodes = realloc(node->val.call.args.nodes, ++node->val.call.args.num_nodes * sizeof(struct ast));
+				gen_node(&node->val.call.args.nodes[old]);
 				if (tok.typ == TokPunc && tok.idx == PnComma) {
 					lxr_next();
 					goto rpt;
@@ -129,9 +129,12 @@ static void affect_typ(struct typ *typ) {
 		}
 		goto err;
 	case KwChar:
-		if (!typ->len) {
-			typ->len = sizeof(char);
-			break;
+		if (!typ->typ) {
+			typ->typ = TypeChar;
+			if (!typ->len) {
+				typ->len = sizeof(char);
+				break;
+			}
 		}
 		goto err;
 	case KwLong:
@@ -175,6 +178,7 @@ static void affect_typ(struct typ *typ) {
 		*prv = *typ;
 		typ->typ = TypePtr;
 		typ->val.p = prv;
+		typ->len = 4; /*for now*/
 		lxr_next();
 	}
 	return;
@@ -191,6 +195,7 @@ static void gen_binop(struct ast *binop, struct ast *left) {
 }
 
 static void parse_scope(void) {
+	fprintf(stdout, "Parsing a scope\n");
 	lxr_next();
 	while (tok.typ != TokPunc || tok.idx != PnBraceR) {
 		if (tok.typ == TokNone) {
@@ -208,10 +213,13 @@ static void parse_scope(void) {
 static void handle_decl(void) {
 	struct sym *sym;
 	unsigned char is_td;
+	size_t old = cur->num_syms;
 	is_td = 0;
-	sym = malloc(sizeof(struct sym));
+	cur->syms = realloc(cur->syms, ++cur->num_syms * sizeof(struct sym));
+	sym = &cur->syms[old];
 	sym->typ = malloc(sizeof(struct typ));
 	memset(sym->typ, 0, sizeof(struct typ));
+	fprintf(stdout, "PArsing decl\n");
 	while (tok.typ == TokKword) {
 		if (tok.idx == KwTypedef) {
 			is_td = 1;
@@ -240,10 +248,12 @@ static void handle_decl(void) {
 				fprintf(stdout, "Arg\n");
 				sym->typ->args = realloc(sym->typ->args, ++sym->typ->num_args * sizeof(struct sym));
 				sym->typ->args[old].typ = malloc(sizeof(struct typ));
-
+				memset(sym->typ->args[old].typ, 0, sizeof(struct typ));
 				while (tok.typ == TokKword) {
+					fprintf(stdout, "About to parse type\n");
 					affect_typ(sym->typ->args[old].typ);
 				}
+				fprintf(stdout, "Finished parse type\n");
 				if (tok.typ != TokIdent) {
 					sym->typ->args[old].name = NULL;
 				} else {
@@ -280,16 +290,14 @@ static void handle_decl(void) {
 				parse_scope();
 				cur = cur->parnt;
 
-				return;
+				goto finish;
 			}
-			lxr_next();
 			if (tok.typ == TokPunc) {
 				if (tok.idx == PnSemi) {
 					lxr_next();
-					return;
+					goto finish;
 				}
 			}
-			lxr_next();
 		} else if (tok.typ == TokOper && tok.idx == OpAss) {
 			size_t old = cur->num_nodes;
 			fprintf(stdout, "Assignment\n");
@@ -303,7 +311,7 @@ static void handle_decl(void) {
 			lxr_next();
 			cur->nodes[old].val.binop.right = malloc(sizeof(struct ast));
 			gen_node(cur->nodes[old].val.binop.right);
-			return;
+			goto finish;
 		}
 		if (tok.idx != PnComma) {
 			fprintf(stdout, "Not comma\n");
@@ -314,6 +322,9 @@ static void handle_decl(void) {
 	if (tok.idx != PnSemi) {
 		parse_panic("Unexpected symbol following symbol declaration");
 	}
+
+finish:
+	return;
 }
 static void handle_ordr(void) {
 	size_t old = cur->num_nodes;
@@ -450,6 +461,17 @@ static void print_node(struct ast *node) {
 		break;
 	case AstRef:
 		printf("Reference to symbol %s\n", node->val.ref->name);
+		break;
+	case AstCall:
+		printf("Call of:\n");
+		print_node(node->val.call.of);
+		printf("With\n");
+		{
+			size_t i;
+			for (i = 0; i < node->val.call.args.num_nodes; ++i) {
+				print_node(&node->val.call.args.nodes[i]);
+			}
+		}
 		break;
 	}
 	fflush(stdout);

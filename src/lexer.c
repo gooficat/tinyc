@@ -100,8 +100,9 @@ rpt:
 		cnsts = realloc(cnsts, ++num_cnsts * sizeof(*cnsts));
 		cnsts[tok.idx].typ = ConstString;
 		cnsts[tok.idx].val.s = malloc(j + 1);
-		strncpy((char *)cnsts[tok.idx].val.s, skr, j);
-		skr += j;
+		memcpy((char *)cnsts[tok.idx].val.s, skr, j);
+		cnsts[tok.idx].val.s[j] = '\0';
+		skr += j + 1;
 		return;
 	}
 	if (isspace(*skr)) {

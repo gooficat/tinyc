@@ -8,7 +8,7 @@ struct cnst {
   union {
     long i;
     long double f;
-    char const *s;
+    char *s;
   } val;
 };
 
@@ -21,7 +21,8 @@ struct typ {
     TypePtr,
     TypeFloat,
     TypeStruc,
-    TypeLabel
+    TypeLabel,
+    TypeChar
   } typ;
   size_t len;
   union {
@@ -35,6 +36,7 @@ struct typ {
 };
 
 struct sym {
+  enum memtyp { MemNone, MemErr, MemStk, MemStat, MemExtrn } mem;
   struct typ *typ;
   char const *name;
 };
