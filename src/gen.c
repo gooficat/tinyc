@@ -23,25 +23,29 @@ void codegen_init(FILE *file) {
 }
 
 /*eventually labels may need a similar func*/
+/*
 static unsigned long rec_find_depth(struct scope *scop, char const *sym, struct memloc *ml, unsigned long dep) {
 	size_t i;
 	for (i = 0; i < scop->num_syms; ++i) {
-		/*if (scop->syms[i].mem == MemStk)*/
-		if (!strcmp(sym, scop->syms[i].name)) {
-			return dep;
+		if (scop->syms[i].mem == MemStk) {
 		}
-		dep += ALIGN_SIZE;
-	}
-	return rec_find_depth(scop->parnt, sym, ml, dep);
+if (!strcmp(sym, scop->syms[i].name)) {
+	return dep;
 }
+dep += ALIGN_SIZE;
+}
+return rec_find_depth(scop->parnt, sym, ml, dep);
+}
+*/
 
+/*
 static void find_depth(struct scope *scop, char const *sym, struct memloc *ml) {
 	unsigned long i = 0;
 	ml->typ = MemNone;
 	while (!ml->typ) {
 		i = rec_find_depth(scop, sym, ml, i);
 	}
-}
+}*/
 
 static void codegen_binop(struct ast *ast) {
 	/*
@@ -201,7 +205,7 @@ void codegen_node(struct ast *ast) {
 		break;
 	case AstCond:
 		break;
-	case AstRef: {
+	case AstRef: { /* TODO !!!! work out assignments. we can't just put the value on eax, we need to sandwich the referencing location, be it static or stack*/
 		/*
 		as a  stand-in, i'll just assume static for now
 		struct memloc ml;

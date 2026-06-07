@@ -1,4 +1,3 @@
-#include "dict.h"
 #include "err.h"
 #include "gen.h"
 #include "lexer.h"
