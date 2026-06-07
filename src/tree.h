@@ -79,6 +79,5 @@ extern struct ast {
 } tree;
 
 void tree_parse(void);
-void tree_print(void);
 
 #endif

@@ -2,8 +2,10 @@
 #include "err.h"
 #include "lexer.h"
 #include "val.h"
+#include <cstdarg>
 #include <stdio.h>
 #include <string.h>
+#include <vadefs.h>
 
 static FILE *out;
 static struct scope *cur;
@@ -17,6 +19,13 @@ struct memloc {
 
 void codegen_init(FILE *file) {
 	out = file;
+}
+
+static void write_out(char const *const s, ...) {
+	va_list va;
+	va_start(va, s);
+	fprintf(out, s, va);
+	va_end(va);
 }
 
 /*eventually labels may need a similar func*/
@@ -45,14 +54,14 @@ static void codegen_scope(struct scope *scop) {
 	cur = scop;
 	/* this doesnt account for external and static syms
 	if (scop->num_syms) {
-		fprintf(out, "\tsub $%lu, %%esp\n", (unsigned long)scop->num_syms * ALIGN_SIZE); Aligned for now, TODO
+		write_out("\tsub $%lu, %%esp\n"); Aligned for now, TODO
 	 }
 	*/
 	for (i = 0; i < scop->num_nodes; ++i) {
 		codegen_node(&scop->nodes[i]);
 	} /*
 	 if (scop->num_syms) {
-		 fprintf(out, "\tadd $%lu, %%esp\n", (unsigned long)scop->num_syms * ALIGN_SIZE);
+		 write_out("\tadd $%lu, %%esp\n");
 	 }*/
 }
 
@@ -61,12 +70,12 @@ static void codegen_cnst(struct cnst *cnst) {
 	case ConstNone:
 		codegen_panic("No constant\n");
 	case ConstInt:
-		fprintf(out, "\tmov $%ld, %%eax\n", cnst->val.i);
+		write_out("\tmov $%ld, %%eax\n");
 		break;
 	case ConstFloat:
 		codegen_panic("Unimplemented (floats)\n");
 	case ConstString:
-		fprintf(out, "\tlea cnst_%zu, %%eax\n", cnst - cnsts);
+		write_out("\tlea cnst_%zu, %%eax\n");
 		break;
 	}
 }
@@ -90,26 +99,26 @@ void codegen_node(struct ast *ast) {
 		case OrderReturn:
 			codegen_node(ast->val.order.val.node);
 			if (cur->num_syms) {
-				fprintf(out, "\tadd $%lu, %%esp\n", (unsigned long)cur->num_syms * ALIGN_SIZE); /*TODO make sure bigger types count*/
+				write_out("\tadd $%lu, %%esp\n"); /*TODO make sure bigger types count*/
 			}
-			fprintf(out, "\tret\n");
+			write_out("\tret\n");
 			break;
 		default:
 			codegen_panic("Unimplemented (order besides return)\n");
 		}
 		break;
 	case AstFunc:
-		fprintf(out,
-				".globl %s\n"
-				"%s:\n",
-				ast->val.func.sym->name, ast->val.func.sym->name);
+		write_out(
+			".globl %s\n"
+			"%s:\n",
+			ast->val.func.sym->name, ast->val.func.sym->name);
 		codegen_scope(&ast->val.func.body);
 		if (cur->num_syms) {
-			fprintf(out, "\tadd $%lu, %%esp\n", (unsigned long)cur->num_syms * ALIGN_SIZE); /*TODO bigger types*/
+			write_out("\tadd $%lu, %%esp\n"); /*TODO bigger types*/
 		}
-		fprintf(out,
-				"\tmov $0, %%eax\n"
-				"\tret\n");
+		write_out(
+			"\tmov $0, %%eax\n"
+			"\tret\n");
 		break;
 	case AstCond:
 		break;
@@ -121,22 +130,21 @@ void codegen_node(struct ast *ast) {
 				if (ml.typ == MemStat)
 
 		*/
-		fprintf(out, ".extern %s\n", ast->val.ref->name);
-		fprintf(out, "\tlea %s, %%eax\n", ast->val.ref->name);
+		write_out(".extern %s\n");
+		write_out("\tlea %s, %%eax\n");
 	} break;
 	case AstCall: {
 		size_t i;
 		for (i = ast->val.call.args.num_nodes; i > 0;) {
 			codegen_node(&ast->val.call.args.nodes[--i]);
-			fprintf(out, "\tpush %%eax\n");
+			write_out("\tpush %%eax\n");
 		}
 		codegen_node(ast->val.call.of);
-		fprintf(out,
-				"\tcall %%eax\n");
+		write_out("\tcall %%eax\n");
 		if (ast->val.call.args.num_nodes) {
-			fprintf(out,
-					"\tadd $%lu, %%esp\n",
-					(unsigned long)ast->val.call.args.num_nodes * ALIGN_SIZE); /*TODO bigger types*/
+			write_out(
+				"\tadd $%lu, %%esp\n",
+				(unsigned long)ast->val.call.args.num_nodes * ALIGN_SIZE); /*TODO bigger types*/
 		}
 		break;
 
@@ -148,17 +156,17 @@ void codegen_node(struct ast *ast) {
 }
 
 void codegen_tree(void) {
-	fprintf(out, ".section \".text\"\n");
+	write_out(".section \".text\"\n");
 	codegen_node(&tree);
-	fprintf(out, ".section \".data\"\n");
+	write_out(".section \".data\"\n");
 	{
 		size_t i;
 		for (i = 0; i < num_cnsts; ++i) {
 			if (cnsts[i].typ == ConstString) {
-				fprintf(out,
-						"cnst_%zu:\n"
-						"\t.asciz \"%s\"\n",
-						i, cnsts[i].val.s);
+				write_out(
+					"cnst_%zu:\n"
+					"\t.asciz \"%s\"\n",
+					i, cnsts[i].val.s);
 			}
 		}
 	}

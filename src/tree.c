@@ -70,7 +70,7 @@ void gen_node(struct ast *node) {
 		case PnParenL: {
 			{
 				struct ast old = *node;
-				fprintf(stdout, "This is a call\n");
+				dbg_print("This is a call\n");
 				node->typ = AstCall;
 				node->val.call.of = malloc(sizeof(struct ast));
 				*node->val.call.of = old;
@@ -196,7 +196,7 @@ static void gen_binop(struct ast *binop, struct ast *left) {
 }
 
 static void parse_scope(void) {
-	fprintf(stdout, "Parsing a scope\n");
+	dbg_print("Parsing a scope\n");
 	lxr_next();
 	while (tok.typ != TokPunc || tok.idx != PnBraceR) {
 		if (tok.typ == TokNone) {
@@ -220,7 +220,7 @@ static void handle_decl(void) {
 	sym = &cur->syms[old];
 	sym->typ = malloc(sizeof(struct typ));
 	memset(sym->typ, 0, sizeof(struct typ));
-	fprintf(stdout, "PArsing decl\n");
+	dbg_print("PArsing decl\n");
 	while (tok.typ == TokKword) {
 		if (tok.idx == KwTypedef) {
 			is_td = 1;
@@ -240,21 +240,21 @@ static void handle_decl(void) {
 	lxr_next();
 	for (;;) {
 		if (tok.idx == PnParenL) {
-			fprintf(stdout, "Function decl\n");
+			dbg_print("Function decl\n");
 			sym->typ->args = malloc(1);
 			sym->typ->num_args = 0;
 			lxr_next();
 			while (tok.typ != TokPunc || tok.idx != PnParenR) {
 				size_t old = sym->typ->num_args;
-				fprintf(stdout, "Arg\n");
+				dbg_print("Arg\n");
 				sym->typ->args = realloc(sym->typ->args, ++sym->typ->num_args * sizeof(struct sym));
 				sym->typ->args[old].typ = malloc(sizeof(struct typ));
 				memset(sym->typ->args[old].typ, 0, sizeof(struct typ));
 				while (tok.typ == TokKword) {
-					fprintf(stdout, "About to parse type\n");
+					dbg_print("About to parse type\n");
 					affect_typ(sym->typ->args[old].typ);
 				}
-				fprintf(stdout, "Finished parse type\n");
+				dbg_print("Finished parse type\n");
 				if (tok.typ != TokIdent) {
 					sym->typ->args[old].name = NULL;
 				} else {
@@ -301,7 +301,7 @@ static void handle_decl(void) {
 			}
 		} else if (tok.typ == TokOper && tok.idx == OpAss) {
 			size_t old = cur->num_nodes;
-			fprintf(stdout, "Assignment\n");
+			dbg_print("Assignment\n");
 			cur->nodes = realloc(cur->nodes, ++cur->num_nodes * sizeof(struct ast));
 			lxr_next();
 			cur->nodes[old].typ = AstBinOp;
@@ -315,7 +315,7 @@ static void handle_decl(void) {
 			goto finish;
 		}
 		if (tok.idx != PnComma) {
-			fprintf(stdout, "Not comma\n");
+			dbg_print("Not comma\n");
 			break;
 		}
 		lxr_next();
@@ -398,87 +398,5 @@ void tree_parse(void) {
 	while (tok.typ) {
 		handle_stmt();
 	}
-	fprintf(stdout, "Finished parsing\n");
-}
-
-/*
-
-
-
-*/
-
-static void print_node(struct ast *node);
-
-static void print_scope(struct scope *scope) {
-	size_t i;
-	printf("Scope: %zu syms, %zu nodes\n", scope->num_syms, scope->num_nodes);
-	for (i = 0; i < scope->num_syms; ++i) {
-		printf("Symbol %s\n", scope->syms[i].name);
-	}
-	for (i = 0; i < scope->num_nodes; ++i) {
-		print_node(scope->nodes + i);
-	}
-}
-
-static void print_node(struct ast *node) {
-	switch (node->typ) {
-	case AstNone:
-		puts("Error: No node\n");
-		break;
-	case AstScope:
-		print_scope(&node->val.scope);
-		break;
-	case AstBinOp:
-		printf("Operation: %s\nLeft:\n", OPERATORS[node->val.binop.operator]);
-		print_node(node->val.binop.left);
-		printf("Right:\n");
-		print_node(node->val.binop.right);
-		break;
-	case AstUnOp:
-		printf("Operation: %s\n", OPERATORS[node->val.unop.operator]);
-		print_node(node->val.unop.node);
-		break;
-	case AstOrder:
-		printf("Order\n");
-		break;
-	case AstFunc:
-		printf("Function\n");
-		printf("Named %s\n", node->val.func.sym->name);
-		print_scope(&node->val.func.body);
-		break;
-	case AstCond:
-		printf("Conditional %i\n", node->val.cond.typ);
-		printf("Condition:\n");
-		print_node(node->val.cond.cond);
-		printf("Body:\n");
-		print_node(node->val.cond.body);
-		if (node->val.cond.els) {
-			printf("Else:\n");
-			print_node(node->val.cond.els);
-		}
-		break;
-	case AstConst:
-		printf("Constant of type %i\n", node->val.cnst->typ);
-		break;
-	case AstRef:
-		printf("Reference to symbol %s\n", node->val.ref->name);
-		break;
-	case AstCall:
-		printf("Call of:\n");
-		print_node(node->val.call.of);
-		printf("With\n");
-		{
-			size_t i;
-			for (i = 0; i < node->val.call.args.num_nodes; ++i) {
-				print_node(&node->val.call.args.nodes[i]);
-			}
-		}
-		break;
-	}
-	fflush(stdout);
-}
-
-void tree_print(void) {
-	fflush(stdout);
-	print_node(&tree);
+	dbg_print("Finished parsing\n");
 }
