@@ -62,7 +62,11 @@ void gen_node(struct ast *node) {
 		break;
 	}
 	case TokOper:
-		parse_panic("Operator is not implemented yet");
+		node->typ = AstUnOp;
+		node->val.unop.operator = tok.idx;
+		node->val.unop.node = malloc(sizeof(struct ast));
+		node->val.unop.pre = 0;
+		gen_node(node->val.unop.node);
 		break;
 	}
 	if (tok.typ == TokPunc) {
@@ -104,6 +108,21 @@ static void handle_expr(void) {
 	size_t l = cur->num_nodes;
 	cur->nodes = realloc(cur->nodes, ++cur->num_nodes * sizeof(struct ast));
 	gen_node(&cur->nodes[l]);
+	/*	if (tok.typ == TokOper) {
+			struct ast bin;
+			bin.typ = AstBinOp; TODO check if it's a postfix operator
+			enum operator op;
+			struct ast right;
+			op = tok.idx;
+			gen_node(&right);
+			/NOW CHECK PRIORITIES
+			if (priority_op(op, tok.idx)) {
+
+				cur->nodes[l]
+			}
+		}
+
+		somehow needs to be recursive or iterative*/
 }
 
 static void affect_typ(struct typ *typ) {

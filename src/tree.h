@@ -40,6 +40,7 @@ extern struct ast {
     struct {
       enum operator operator;
       struct ast *node;
+      unsigned char pre; /* is it a prefix ? otherwise it's postfix*/
     } unop;
     struct {
       enum {
