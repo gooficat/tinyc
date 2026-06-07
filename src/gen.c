@@ -28,9 +28,8 @@ void codegen_init(FILE *file) {
 static unsigned long rec_find_depth(struct scope *scop, char const *sym, struct memloc *ml, unsigned long dep) {
 	size_t i;
 	for (i = 0; i < scop->num_syms; ++i) {
-		if (scop->syms[i].mem == MemStk) {
-		}
 		if (!strcmp(sym, scop->syms[i].name)) {
+			ml->typ = scop->syms[i].mem;
 			return dep;
 		}
 		dep += ALIGN_SIZE;
@@ -38,14 +37,13 @@ static unsigned long rec_find_depth(struct scope *scop, char const *sym, struct 
 	return rec_find_depth(scop->parnt, sym, ml, dep);
 }
 
-static long find_depth(struct scope *scop, char const *sym) {
-	struct memloc ml;
+static void find_depth(struct scope *scop, char const *sym, struct memloc *ml) {
 	unsigned long i = 0;
-	ml.typ = MemNone;
-	while (!ml.typ) {
-		i = rec_find_depth(scop, sym, &ml, i);
+	ml->typ = MemNone;
+	while (!ml->typ) {
+		i = rec_find_depth(scop, sym, ml, i);
 	}
-	return ml.val.dep; /*???? TODO ????*/
+	ml->val.dep = i;
 }
 
 void gen_lvalue(struct ast *ast) {
@@ -54,17 +52,19 @@ void gen_lvalue(struct ast *ast) {
 		return;
 	}
 	if (ast->typ == AstRef) {
-		switch (ast->val.ref->mem) {
-		default:
-			codegen_panic("Errorful memory\n");
+		struct memloc ml;
+		find_depth(cur, ast->val.ref->name, &ml);
+		switch (ml.typ) {
 		case MemStk:
-			fprintf(out, "\tlea %ld(%%esp), %%eax", find_depth(cur, ast->val.ref->name));
-			break; /*I have lost the plot entirely*/
-		case MemStat:
+			fprintf(out, "\tlea %ld(%%esp), %%eax\n", ml.val.dep);
+			break;
 		case MemExtrn:
 			fprintf(out, ".extern %s\n", ast->val.ref->name);
+		case MemStat:
 			fprintf(out, "\tlea %s, %%eax\n", ast->val.ref->name);
 			break;
+		default:
+			codegen_panic("Invalid mem type\n");
 		}
 		return;
 	}
@@ -252,16 +252,22 @@ void codegen_node(struct ast *ast) {
 		break;
 	case AstCond:
 		break;
-	case AstRef: { /* TODO !!!! work out assignments. we can't just put the value on eax, we need to sandwich the referencing location, be it static or stack*/
-		/*
-		as a  stand-in, i'll just assume static for now
+	case AstRef: {
 		struct memloc ml;
-				find_depth(cur, ast->val.ref->name, &ml);
-				if (ml.typ == MemStat)
-
-		*/
-		fprintf(out, ".extern %s\n", ast->val.ref->name);
-		fprintf(out, "\tlea %s, %%eax\n", ast->val.ref->name);
+		find_depth(cur, ast->val.ref->name, &ml);
+		switch (ml.typ) {
+		case MemStk:
+			fprintf(out, "\tmov %ld(%%esp), %%eax\n", ml.val.dep);
+			break;
+		case MemExtrn:
+			fprintf(out, ".extern %s\n", ast->val.ref->name);
+		case MemStat:
+			fprintf(out, "\tmov %s, %%eax\n", ast->val.ref->name);
+			break;
+		default:
+			codegen_panic("Invalid mem type\n");
+		}
+		return;
 	} break;
 	case AstCall: {
 		size_t i;

@@ -154,6 +154,7 @@ static void handle_expr(void) {
 	l = cur->num_nodes;
 	gen_expr(&node);
 	cur->nodes = realloc(cur->nodes, ++cur->num_nodes * sizeof(struct ast));
+	cur->nodes[l] = node;
 }
 
 static void affect_typ(struct typ *typ) {
