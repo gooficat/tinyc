@@ -13,6 +13,11 @@ struct scope {
   struct scope *parnt;
 };
 
+struct comlist {
+  struct ast *nodes;
+  size_t num_nodes;
+};
+
 extern struct ast {
   enum {
     AstNone,
@@ -23,6 +28,7 @@ extern struct ast {
     AstFunc,
     AstCond,
     AstRef,
+    AstCall,
     AstConst
   } typ;
   union {
@@ -64,6 +70,10 @@ extern struct ast {
       struct ast *cond, *body, *els;
     } cond;
     struct sym *ref;
+    struct {
+      struct ast *of;
+      struct comlist args;
+    } call;
     struct cnst *cnst;
   } val;
 } tree;

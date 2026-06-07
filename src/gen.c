@@ -1,5 +1,6 @@
 #include "gen.h"
 #include "err.h"
+#include "lexer.h"
 #include <corecrt_wstdio.h>
 #include <stdio.h>
 #include <string.h>
@@ -124,4 +125,16 @@ void codegen_node(struct ast *ast) {
 void codegen_tree(void) {
 	fprintf(out, ".section \".text\"\n");
 	codegen_node(&tree);
+	fprintf(out, ".section \".data\"\n");
+	{
+		size_t i;
+		for (i = 0; i < num_cnsts; ++i) {
+			if (cnsts[i].typ == ConstString) {
+				fprintf(out,
+						"cnst_%zu\n"
+						".asciz \"%s\"\n",
+						i, cnsts[i].val.s);
+			}
+		}
+	}
 }

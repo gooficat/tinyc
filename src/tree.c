@@ -3,6 +3,7 @@
 #include "err.h"
 #include "lexer.h"
 #include "val.h"
+#include <corecrt_malloc.h>
 #include <malloc.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -63,6 +64,38 @@ void gen_node(struct ast *node) {
 	case TokOper:
 		parse_panic("Operator is not implemented yet");
 		break;
+	}
+	if (tok.typ == TokPunc) {
+		switch (tok.idx) {
+		case PnParenL: {
+			{
+				struct ast old = *node;
+				node->typ = AstCall;
+				node->val.call.of = malloc(sizeof(struct ast));
+				*node->val.call.of = old;
+				node->val.call.args.nodes = malloc(1);
+				node->val.call.args.num_nodes = 0;
+			}
+			lxr_next();
+			if (tok.typ != TokPunc || tok.idx != PnParenR) {
+			rpt:
+				size_t old = cur->num_nodes;
+				cur->nodes = realloc(cur->nodes, ++cur->num_nodes * sizeof(struct ast));
+				gen_node(&cur->nodes[old]);
+				if (tok.typ == TokPunc && tok.idx == PnComma) {
+					lxr_next();
+					goto rpt;
+				}
+				if (tok.typ != TokPunc || tok.idx != PnParenR) {
+					parse_panic("Unexpected symbol in function call");
+				}
+			}
+			lxr_next();
+		} break;
+		case PnComma:
+			/*TODO!!!! Comma lists are a language construct*/
+			break;
+		}
 	}
 }
 
