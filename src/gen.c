@@ -2,7 +2,7 @@
 #include "err.h"
 #include "lexer.h"
 #include "val.h"
-#include <cstdarg>
+#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 #include <vadefs.h>
