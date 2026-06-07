@@ -49,6 +49,24 @@ static void print_node(struct ast *node) {
 		break;
 	case AstOrder:
 		printf("Order\n");
+		switch (node->val.order.ordr) {
+		case OrderNone:
+			printf("No node!\n");
+			break;
+		case OrderReturn:
+			printf("Return!\n");
+			print_node(node->val.order.val.node);
+			break;
+		case OrderBreak:
+			printf("Break!\n");
+			break;
+		case OrderContinue:
+			printf("Continue!\n");
+			break;
+		case OrderGoto:
+			printf("Goto...\n");
+			break;
+		}
 		break;
 	case AstFunc:
 		printf("Function\n");
@@ -68,6 +86,20 @@ static void print_node(struct ast *node) {
 		break;
 	case AstConst:
 		printf("Constant of type %i\n", node->val.cnst->typ);
+		switch (node->val.cnst->typ) {
+		case ConstNone:
+			printf("No constant\n");
+			break;
+		case ConstInt:
+			printf("Integer of %ld\n", node->val.cnst->val.i);
+			break;
+		case ConstFloat:
+			printf("Float of %Lf\n", node->val.cnst->val.f);
+			break;
+		case ConstString:
+			printf("String of %s\n", node->val.cnst->val.s);
+			break;
+		}
 		break;
 	case AstRef:
 		printf("Reference to symbol %s\n", node->val.ref->name);

@@ -4,6 +4,7 @@
 #include "gen.h"
 #include "lexer.h"
 #include "val.h"
+#include <corecrt_malloc.h>
 #include <malloc.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,6 +14,7 @@ struct ast tree;
 struct scope *cur;
 
 static void handle_stmt(void);
+static void gen_expr(struct ast *node);
 
 static int types_compatible(struct typ *a, struct typ *b) {
 	return 1; /* allow all for now >:| */
@@ -86,7 +88,7 @@ void gen_node(struct ast *node) {
 			rpt:
 				size_t old = node->val.call.args.num_nodes;
 				node->val.call.args.nodes = realloc(node->val.call.args.nodes, ++node->val.call.args.num_nodes * sizeof(struct ast));
-				gen_node(&node->val.call.args.nodes[old]);
+				gen_expr(&node->val.call.args.nodes[old]);
 				if (tok.typ == TokPunc && tok.idx == PnComma) {
 					lxr_next();
 					goto rpt;
@@ -98,31 +100,60 @@ void gen_node(struct ast *node) {
 			lxr_next();
 		} break;
 		case PnComma:
-			/*TODO!!!! Comma lists are a language construct*/
+			/*TODO!!!! Comma lists are actually a type of expression. They should be allowed to exist at other levels*/
 			break;
 		}
 	}
 }
 
-static void handle_expr(void) {
-	size_t l = cur->num_nodes;
-	cur->nodes = realloc(cur->nodes, ++cur->num_nodes * sizeof(struct ast));
-	gen_node(&cur->nodes[l]);
-	/*	if (tok.typ == TokOper) {
-			struct ast bin;
-			bin.typ = AstBinOp; TODO check if it's a postfix operator
-			enum operator op;
-			struct ast right;
-			op = tok.idx;
-			gen_node(&right);
-			/NOW CHECK PRIORITIES
-			if (priority_op(op, tok.idx)) {
+static int op_priority(enum operator a, enum operator b) {
+}
 
-				cur->nodes[l]
-			}
+static void gen_binop(struct ast *node, struct ast *left) {
+	enum operator op;
+	struct ast *right;
+	dbg_print("Binary operation");
+	op = tok.idx;
+	lxr_next();
+	right = malloc(sizeof(struct ast));
+	gen_node(right);
+	if (tok.typ == TokOper) {
+		if (op_priority(tok.idx, op)) {
+			node->typ = AstBinOp;
+			node->val.binop.left = left;
+			node->val.binop.right = malloc(sizeof(struct ast));
+			gen_binop(node->val.binop.right, right);
+		} else {
+			struct ast *nnode = malloc(sizeof(struct ast));
+			nnode->typ = AstBinOp;
+			nnode->val.binop.left = left;
+			nnode->val.binop.right = right;
+			gen_binop(node, nnode);
+			return;
 		}
+	} else {
+		node->typ = AstBinOp;
+		node->val.binop.left = left;
+		node->val.binop.operator = op;
+		node->val.binop.right = right;
+	}
+}
 
-		somehow needs to be recursive or iterative*/
+static void gen_expr(struct ast *node) {
+	gen_node(node);
+	if (tok.typ == TokOper) {
+		struct ast *left = malloc(sizeof(struct ast));
+		*left = *node;
+		gen_binop(node, left);
+	}
+}
+
+static void handle_expr(void) {
+	size_t l;
+	struct ast node;
+	l = cur->num_nodes;
+	gen_expr(&node);
+	cur->nodes = realloc(cur->nodes, ++cur->num_nodes * sizeof(struct ast));
 }
 
 static void affect_typ(struct typ *typ) {
@@ -204,14 +235,6 @@ static void affect_typ(struct typ *typ) {
 	return;
 err:
 	parse_panic("Malformed type");
-}
-
-static void gen_binop(struct ast *binop, struct ast *left) {
-	binop->typ = AstBinOp;
-	lxr_next();
-	binop->val.binop.left = left;
-	binop->val.binop.operator = tok.idx;
-	binop->val.binop.right = malloc(sizeof(struct ast));
 }
 
 static void parse_scope(void) {
@@ -355,7 +378,7 @@ static void handle_ordr(void) {
 		cur->nodes[old].val.order.ordr = OrderReturn;
 		lxr_next();
 		cur->nodes[old].val.order.val.node = malloc(sizeof(struct ast));
-		gen_node(cur->nodes[old].val.order.val.node);
+		gen_expr(cur->nodes[old].val.order.val.node);
 		break;
 	case KwBreak:
 		cur->nodes[old].val.order.ordr = OrderBreak;

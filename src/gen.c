@@ -1,4 +1,5 @@
 #include "gen.h"
+#include "dict.h"
 #include "err.h"
 #include "lexer.h"
 #include "val.h"
@@ -21,13 +22,6 @@ void codegen_init(FILE *file) {
 	out = file;
 }
 
-static void write_out(char const *const s, ...) {
-	va_list va;
-	va_start(va, s);
-	fprintf(out, s, va);
-	va_end(va);
-}
-
 /*eventually labels may need a similar func*/
 static unsigned long rec_find_depth(struct scope *scop, char const *sym, struct memloc *ml, unsigned long dep) {
 	size_t i;
@@ -42,10 +36,94 @@ static unsigned long rec_find_depth(struct scope *scop, char const *sym, struct 
 }
 
 static void find_depth(struct scope *scop, char const *sym, struct memloc *ml) {
-	ml->typ = MemNone;
 	unsigned long i = 0;
+	ml->typ = MemNone;
 	while (!ml->typ) {
 		i = rec_find_depth(scop, sym, ml, i);
+	}
+}
+
+static void codegen_binop(struct ast *ast) {
+	/*
+	TODO assignments, structs. Parser will need a rework to allow structs.
+	May it be best to treat it as punctuation instead of operators?
+	if (ast.vasst->val.binop.operator == OpAss) {
+		return;
+	} else if (ast->val.binop.operator == OpDot) {
+
+	} else if (ast->val.binop.operator == OpArrow) {
+	}*/
+	codegen_node(ast->val.binop.left);
+	fprintf(out, "\tpush %%eax\n");
+	codegen_node(ast->val.binop.right);
+	fprintf(out, "\tpop %%edx\n");
+	switch (ast->val.binop.operator) {
+	case OpShR:
+		fprintf(out, "\tshr %%edx, %%eax\n");
+		break;
+	case OpShL:
+		fprintf(out, "\tshl %%edx, %%eax\n");
+		break;
+	case OpAdd:
+		fprintf(out, "\tadd %%edx, %%eax\n");
+		break;
+	case OpSub:
+		fprintf(out, "\tsub %%edx, %%eax\n");
+		break;
+	case OpMul:
+		fprintf(out, "\timul %%edx, %%eax\n");
+		break;
+	case OpDiv:
+		fprintf(out, "\tidiv\n");
+		break;
+	case OpMod:
+		fprintf(out, "\tidiv %%edx, %%eax, %%eax\n");
+		break;
+		/*
+	case OpLogAnd:
+		fprintf(out, "\tand %%edx, %%eax\n");
+		break;
+	case OpLogOr:
+		fprintf(out, "\tor %%edx, %%eax\n");
+		break;
+	case OpLogEqu:
+		fprintf(out, "\tsub %%edx, %%eax\n");
+		break;
+	case OpLogGEqu:
+		fprintf(out, "\tshr %%edx, %%eax\n");
+		break;
+	case OpLogLEqu:
+		fprintf(out, "\tshr %%edx, %%eax\n");
+		break;
+	case OpBinAndEqu:
+		fprintf(out, "\tshr %%edx, %%eax\n");
+		break;
+	case OpBinOrEqu:
+		fprintf(out, "\tshr %%edx, %%eax\n");
+		break;
+	case OpBinXOrEqu:
+		fprintf(out, "\tshr %%edx, %%eax\n");
+		break;
+	case OpLogGrtr:
+		fprintf(out, "\tshr %%edx, %%eax\n");
+		break;
+	case OpLogLess:
+		fprintf(out, "\tshr %%edx, %%eax\n");
+		break;*/
+	case OpBinAnd:
+		fprintf(out, "\tand %%edx, %%eax\n");
+		break;
+	case OpBinOr:
+		fprintf(out, "\tor %%edx, %%eax\n");
+		break;
+	case OpBinXOr:
+		fprintf(out, "\txor %%edx, %%eax\n");
+		break;
+	case OpBinNot:
+		fprintf(out, "\tnot %%edx, %%eax\n");
+		break;
+	default:
+		codegen_panic("Error! Not a binary operator\n");
 	}
 }
 
@@ -54,14 +132,14 @@ static void codegen_scope(struct scope *scop) {
 	cur = scop;
 	/* this doesnt account for external and static syms
 	if (scop->num_syms) {
-		write_out("\tsub $%lu, %%esp\n"); Aligned for now, TODO
+		fprintf(out, "\tsub $%lu, %%esp\n"); Aligned for now, TODO
 	 }
 	*/
 	for (i = 0; i < scop->num_nodes; ++i) {
 		codegen_node(&scop->nodes[i]);
 	} /*
 	 if (scop->num_syms) {
-		 write_out("\tadd $%lu, %%esp\n");
+		 fprintf(out, "\tadd $%lu, %%esp\n");
 	 }*/
 }
 
@@ -70,12 +148,12 @@ static void codegen_cnst(struct cnst *cnst) {
 	case ConstNone:
 		codegen_panic("No constant\n");
 	case ConstInt:
-		write_out("\tmov $%ld, %%eax\n");
+		fprintf(out, "\tmov $%ld, %%eax\n", cnst->val.i);
 		break;
 	case ConstFloat:
 		codegen_panic("Unimplemented (floats)\n");
 	case ConstString:
-		write_out("\tlea cnst_%zu, %%eax\n");
+		fprintf(out, "\tlea cnst_%zu, %%eax\n", cnsts - cnst);
 		break;
 	}
 }
@@ -88,9 +166,9 @@ void codegen_node(struct ast *ast) {
 	case AstScope:
 		codegen_scope(&ast->val.scope);
 		break;
-	case AstBinOp:
-		codegen_panic("Unimplemented (binary op)\n");
-		break;
+	case AstBinOp: {
+		codegen_binop(ast);
+	} break;
 	case AstUnOp:
 		codegen_panic("Unimplemented (unary op)\n");
 		break;
@@ -98,27 +176,28 @@ void codegen_node(struct ast *ast) {
 		switch (ast->val.order.ordr) {
 		case OrderReturn:
 			codegen_node(ast->val.order.val.node);
-			if (cur->num_syms) {
-				write_out("\tadd $%lu, %%esp\n"); /*TODO make sure bigger types count*/
+			if (cur->num_syms) {																			   /*TODO account for statics*/
+				fprintf(out, "\tadd $%lu, %%esp\n", (unsigned long)ast->val.call.args.num_nodes * ALIGN_SIZE); /*TODO bigger types*/
+																											   /*TODO make sure bigger types count*/
 			}
-			write_out("\tret\n");
+			fprintf(out, "\tret\n");
 			break;
 		default:
 			codegen_panic("Unimplemented (order besides return)\n");
 		}
 		break;
 	case AstFunc:
-		write_out(
-			".globl %s\n"
-			"%s:\n",
-			ast->val.func.sym->name, ast->val.func.sym->name);
+		fprintf(out,
+				".globl %s\n"
+				"%s:\n",
+				ast->val.func.sym->name, ast->val.func.sym->name);
 		codegen_scope(&ast->val.func.body);
 		if (cur->num_syms) {
-			write_out("\tadd $%lu, %%esp\n"); /*TODO bigger types*/
+			fprintf(out, "\tadd $%ld, %%esp\n", (unsigned long)ast->val.func.body.num_syms * 4); /*TODO bigger types*/
 		}
-		write_out(
-			"\tmov $0, %%eax\n"
-			"\tret\n");
+		fprintf(out, /*TODO non register returns*/
+				"\tmov $0, %%eax\n"
+				"\tret\n");
 		break;
 	case AstCond:
 		break;
@@ -130,21 +209,21 @@ void codegen_node(struct ast *ast) {
 				if (ml.typ == MemStat)
 
 		*/
-		write_out(".extern %s\n");
-		write_out("\tlea %s, %%eax\n");
+		fprintf(out, ".extern %s\n", ast->val.ref->name);
+		fprintf(out, "\tlea %s, %%eax\n", ast->val.ref->name);
 	} break;
 	case AstCall: {
 		size_t i;
 		for (i = ast->val.call.args.num_nodes; i > 0;) {
 			codegen_node(&ast->val.call.args.nodes[--i]);
-			write_out("\tpush %%eax\n");
+			fprintf(out, "\tpush %%eax\n");
 		}
 		codegen_node(ast->val.call.of);
-		write_out("\tcall %%eax\n");
+		fprintf(out, "\tcall %%eax\n");
 		if (ast->val.call.args.num_nodes) {
-			write_out(
-				"\tadd $%lu, %%esp\n",
-				(unsigned long)ast->val.call.args.num_nodes * ALIGN_SIZE); /*TODO bigger types*/
+			fprintf(out,
+					"\tadd $%lu, %%esp\n",
+					(unsigned long)ast->val.call.args.num_nodes * ALIGN_SIZE); /*TODO bigger types*/
 		}
 		break;
 
@@ -156,17 +235,17 @@ void codegen_node(struct ast *ast) {
 }
 
 void codegen_tree(void) {
-	write_out(".section \".text\"\n");
+	fprintf(out, ".section \".text\"\n");
 	codegen_node(&tree);
-	write_out(".section \".data\"\n");
+	fprintf(out, ".section \".data\"\n");
 	{
 		size_t i;
 		for (i = 0; i < num_cnsts; ++i) {
 			if (cnsts[i].typ == ConstString) {
-				write_out(
-					"cnst_%zu:\n"
-					"\t.asciz \"%s\"\n",
-					i, cnsts[i].val.s);
+				fprintf(out,
+						"cnst_%zu:\n"
+						"\t.asciz \"%s\"\n",
+						i, cnsts[i].val.s);
 			}
 		}
 	}
