@@ -1,6 +1,5 @@
-#include <stdio.h>
+#include "parse/lex/toks.h"
 
 int main() {
-	fputs("Hello, World!", stdout);
-	return 0;
+	init_tok_maps();
 }
