@@ -1,11 +1,26 @@
 #ifndef __TYPES__H__
 #define __TYPES__H__
 
+#include "utils/hash.h"
 #include <stddef.h>
 #include <stdint.h>
 
-struct c_type {
-	void *placeholder;
+enum c_type_type {
+	C_TYPE_NONE,
+	C_TYPE_ERR,
+	C_TYPE_INT,
+	C_TYPE_FLT,
+	C_TYPE_STRUC,
+	C_TYPE_ENUM,
+	C_TYPE_CHAR,
+	C_TYPE_PTR,
 };
+
+struct c_type {
+	enum c_type_type type;
+	size_t width;
+	void *data;
+};
+extern const struct c_type TYPES_UNMAPPED[];
 
 #endif //!__TYPES__H__
