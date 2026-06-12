@@ -37,6 +37,7 @@ void lexer_next(struct parse_ctx *ctx) {
 rewind:
 	if (!ctx->lexer.skr) {
 		ctx->lexer.tok.type = TK_NULL;
+		return;
 	}
 	if (!*ctx->lexer.skr) {
 		lexer_next_line(&ctx->lexer);
@@ -50,7 +51,9 @@ rewind:
 	}
 
 	if (*ctx->lexer.skr == '"' || isdigit(*ctx->lexer.skr)) {
+		ctx->lexer.tok.type = TK_CNST;
 		ctx->lexer.tok.val = gen_constant(ctx);
+		return;
 	}
 	{
 		char const *const *match;
@@ -58,12 +61,14 @@ rewind:
 		if (match) {
 			ctx->lexer.tok.type = TK_PUNC;
 			ctx->lexer.tok.val = match - PUNCTUATORS_UNMAPPED;
+			ctx->lexer.skr += strlen(PUNCTUATORS_UNMAPPED[ctx->lexer.tok.val]);
 			return;
 		}
 		match = word_match(ctx->lexer.skr, KEYWORDS_UNMAPPED);
 		if (match) {
 			ctx->lexer.tok.type = TK_KEYW;
 			ctx->lexer.tok.val = match - KEYWORDS_UNMAPPED;
+			ctx->lexer.skr += strlen(KEYWORDS_UNMAPPED[ctx->lexer.tok.val]);
 			return;
 		}
 	}
