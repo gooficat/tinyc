@@ -2,8 +2,6 @@
 #define __LEXER__H__
 
 #include "parse/lex/toks.h"
-#include "utils/pstr.h"
-#include "utils/vector.h"
 #include <stdint.h>
 #include <stdio.h>
 
