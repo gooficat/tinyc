@@ -2,6 +2,9 @@
 #include "parse/ctx.h"
 #include "strucs/value.h"
 #include "toks.h"
+#include "utils/hash.h"
+#include "utils/pstr.h"
+#include "utils/vector.h"
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,6 +16,21 @@ void lexer_init(struct lexer *lexer, FILE *file) {
 	lexer->line = malloc(lexer->line_cap = 128);
 	lexer->line_num = 0;
 	lexer_next_line(lexer);
+}
+
+char const *const *word_match(char const *src, char const *const *list) {
+	while (*list) {
+		size_t len = strlen(*list);
+		if (strncmp(src, *list, len)) {
+			++list;
+			continue;
+		}
+		if (isalnum(src[len - 1]) && isalnum(src[len])) {
+			continue;
+		}
+		return list;
+	}
+	return NULL;
 }
 
 void lexer_next(struct parse_ctx *ctx) {
@@ -31,8 +49,33 @@ rewind:
 		goto rewind;
 	}
 
-	if (isdigit(*ctx->lexer.skr)) {
+	if (*ctx->lexer.skr == '"' || isdigit(*ctx->lexer.skr)) {
 		ctx->lexer.tok.val = gen_constant(ctx);
+	}
+	{
+		char const *const *match;
+		match = word_match(ctx->lexer.skr, PUNCTUATORS_UNMAPPED);
+		if (match) {
+			ctx->lexer.tok.type = TK_PUNC;
+			ctx->lexer.tok.val = match - PUNCTUATORS_UNMAPPED;
+			return;
+		}
+		match = word_match(ctx->lexer.skr, KEYWORDS_UNMAPPED);
+		if (match) {
+			ctx->lexer.tok.type = TK_KEYW;
+			ctx->lexer.tok.val = match - KEYWORDS_UNMAPPED;
+			return;
+		}
+	}
+	{
+		size_t i = 0, idx = vec_len(ctx->identifiers);
+		while (isalnum(ctx->lexer.skr[++i]))
+			;
+		vec_grow(ctx->identifiers, 1);
+		pstr_dup(&ctx->identifiers[idx], ctx->lexer.skr, 0, i);
+		ctx->lexer.skr += i;
+		ctx->lexer.tok.type = TK_IDEN;
+		ctx->lexer.tok.val = idx;
 	}
 }
 

@@ -9,4 +9,5 @@ void ctx_init(struct parse_ctx *ctx, FILE *file) {
 	ctx->identifiers = vec_init(struct pstr);
 	ctx->arena = arena_bootstrap(0xFFFF);
 	ctx->current = &ctx->scope;
+	lexer_next(ctx);
 }

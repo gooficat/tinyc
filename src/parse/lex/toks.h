@@ -43,6 +43,9 @@ struct tok {
 	size_t val;
 };
 
+extern char const *KEYWORDS_UNMAPPED[];
+extern char const *PUNCTUATORS_UNMAPPED[];
+
 extern const struct hash_map KEYWORDS;
 extern const struct hash_map PUNCTUATORS;
 

@@ -4,6 +4,6 @@
 
 int main() {
 	struct parse_ctx ctx;
-	ctx_init(&ctx, fopen("./test/1.c"));
-	init_tok_maps();
+	// init_tok_maps();
+	ctx_init(&ctx, fopen("./test/1.c", "r"));
 }
