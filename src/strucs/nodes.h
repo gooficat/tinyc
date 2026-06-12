@@ -17,6 +17,7 @@ enum ast_node_type {
 	AST_REF,
 	AST_CALL,
 	AST_CAST,
+	AST_CONST,
 };
 
 struct ast_node {
@@ -25,7 +26,7 @@ struct ast_node {
 };
 
 struct ast_call {
-	struct ast_node *target;
+	struct ast_node target;
 	struct ast_node arg;
 };
 
