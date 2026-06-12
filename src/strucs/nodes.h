@@ -10,6 +10,8 @@ struct ast_call {
 
 struct ast_scope {
 	vec(struct ast_node) children;
+	vec(struct c_var) vars;
+	struct ast_scope *parent;
 };
 
 enum ast_node_type {
@@ -22,7 +24,6 @@ enum ast_node_type {
 
 struct ast_node {
 	enum ast_node_type type;
-	void *val;
 };
 
 #endif //!__NODES__H__

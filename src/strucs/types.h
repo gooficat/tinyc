@@ -11,6 +11,7 @@ enum c_type_type {
 	C_TYPE_INT,
 	C_TYPE_FLT,
 	C_TYPE_STRUC,
+	C_TYPE_ARRAY,
 	C_TYPE_ENUM,
 	C_TYPE_CHAR,
 	C_TYPE_PTR,
@@ -21,6 +22,6 @@ struct c_type {
 	size_t width;
 	void *data;
 };
-extern const struct c_type TYPES_UNMAPPED[];
+extern const struct c_type TYPES[];
 
 #endif //!__TYPES__H__
