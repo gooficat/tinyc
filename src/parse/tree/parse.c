@@ -30,7 +30,7 @@ static int gen_node(struct parse_ctx *ctx, struct ast_node *node) {
 
 	if (ctx->lexer.tok.type == TK_PUNC) {
 		if (ctx->lexer.tok.val == PN_PAREN_L) {
-			lexer_next(&ctx->lexer);
+			lexer_next(ctx);
 		}
 	}
 	return 1;
