@@ -7,10 +7,26 @@
 #include "utils/vector.h"
 #include <stddef.h>
 
+enum ast_node_type {
+	AST_ERR,
+	AST_FUNC,
+	AST_SCOPE,
+	AST_ORDER,
+	AST_LABEL,
+	AST_CHAIN,
+	AST_REF,
+	AST_CALL,
+	AST_CAST,
+};
+
+struct ast_node {
+	enum ast_node_type type;
+	void *val;
+};
 
 struct ast_call {
 	struct ast_node *target;
-	struct ast_node *args;
+	struct ast_node arg;
 };
 
 struct ast_scope {
@@ -32,26 +48,9 @@ enum ast_order_type {
 struct ast_order {
 	enum ast_order_type type;
 	union {
-		struct ast_node *expr;
+		struct ast_node expr;
 		struct c_label *label;
 	};
-};
-
-struct ast_label {
-	struct pstr name;
-};
-
-enum ast_node_type {
-	AST_ERR,
-	AST_FUNC,
-	AST_SCOPE,
-	AST_ORDER,
-	AST_LABEL,
-};
-
-struct ast_node {
-	enum ast_node_type type;
-	void *val;
 };
 
 #endif //!__NODES__H__

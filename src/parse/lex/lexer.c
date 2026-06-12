@@ -1,4 +1,5 @@
 #include "lexer.h"
+#include "parse/ctx.h"
 #include "strucs/value.h"
 #include "toks.h"
 #include <ctype.h>
@@ -14,24 +15,24 @@ void lexer_init(struct lexer *lexer, FILE *file) {
 	lexer_next_line(lexer);
 }
 
-void lexer_next(struct lexer *lexer) {
+void lexer_next(struct parse_ctx *ctx) {
 rewind:
-	if (!lexer->skr) {
-		lexer->tok.type = TK_NULL;
+	if (!ctx->lexer.skr) {
+		ctx->lexer.tok.type = TK_NULL;
 	}
-	if (!*lexer->skr) {
-		lexer_next_line(lexer);
+	if (!*ctx->lexer.skr) {
+		lexer_next_line(&ctx->lexer);
 		goto rewind;
 	}
-	if (isspace(*lexer->skr)) {
+	if (isspace(*ctx->lexer.skr)) {
 		do {
-			++lexer->skr;
-		} while (isspace(*lexer->skr));
+			++ctx->lexer.skr;
+		} while (isspace(*ctx->lexer.skr));
 		goto rewind;
 	}
 
-	if (isdigit(*lexer->skr)) {
-		lexer->tok.val = gen_constant(&lexer->skr);
+	if (isdigit(*ctx->lexer.skr)) {
+		ctx->lexer.tok.val = gen_constant(ctx);
 	}
 }
 
