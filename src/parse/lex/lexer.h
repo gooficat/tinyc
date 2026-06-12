@@ -9,7 +9,8 @@
 
 struct lexer {
 	struct tok tok;
-	struct pstr *line;
+	char *line;
+	size_t line_cap;
 	char *skr;
 	size_t line_num;
 	FILE *file;

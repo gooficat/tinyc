@@ -1,9 +1,8 @@
 #ifndef __PARSE__H__
 #define __PARSE__H__
 
-#include "parse/lex/lexer.h"
-#include "strucs/nodes.h"
+#include "parse/ctx.h"
 
-void gen_tree(struct ast_node *node, struct lexer *lexer);
+void gen_tree(struct parse_ctx *ctx);
 
 #endif //!__PARSE__H__
