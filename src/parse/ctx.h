@@ -3,6 +3,7 @@
 
 #include "parse/lex/lexer.h"
 #include "strucs/nodes.h"
+#include "strucs/value.h"
 #include "utils/arena.h"
 
 struct parse_ctx {
@@ -10,6 +11,9 @@ struct parse_ctx {
 	struct ast_scope scope;
 	struct ast_scope *current;
 	struct arena arena;
+
+	vec(struct c_const) constants;
+	vec(struct pstr) identifiers;
 };
 
 #endif //!__CTX__H__

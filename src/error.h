@@ -2,9 +2,11 @@
 #define __ERROR__H__
 
 #include "parse/ctx.h"
+#include <stdlib.h>
+#include <stdnoreturn.h>
 
-void parse_error(struct parse_ctx *ctx);
-void syntax_error(struct parse_ctx *ctx);
-void internal_error();
+noreturn void parse_error(struct parse_ctx *ctx);
+noreturn void syntax_error(struct parse_ctx *ctx);
+noreturn void internal_error();
 
 #endif //!__ERROR__H__

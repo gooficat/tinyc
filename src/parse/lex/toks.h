@@ -43,7 +43,6 @@ struct tok {
 
 extern const struct hash_map KEYWORDS;
 extern const struct hash_map PUNCTUATORS;
-extern vec(char *) IDENTIFIERS;
 
 void init_tok_maps();
 

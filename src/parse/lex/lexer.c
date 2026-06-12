@@ -1,5 +1,7 @@
 #include "lexer.h"
+#include "strucs/value.h"
 #include "toks.h"
+#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -13,8 +15,23 @@ void lexer_init(struct lexer *lexer, FILE *file) {
 }
 
 void lexer_next(struct lexer *lexer) {
+rewind:
 	if (!lexer->skr) {
 		lexer->tok.type = TK_NULL;
+	}
+	if (!*lexer->skr) {
+		lexer_next_line(lexer);
+		goto rewind;
+	}
+	if (isspace(*lexer->skr)) {
+		do {
+			++lexer->skr;
+		} while (isspace(*lexer->skr));
+		goto rewind;
+	}
+
+	if (isdigit(*lexer->skr)) {
+		lexer->tok.val = gen_constant(&lexer->skr);
 	}
 }
 

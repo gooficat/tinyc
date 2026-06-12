@@ -1,7 +1,10 @@
 #ifndef __VALUE__H__
 #define __VALUE__H__
 
+#include "parse/ctx.h"
+#include "utils/pstr.h"
 #include "utils/vector.h"
+#include <stddef.h>
 #include <stdint.h>
 
 enum c_const_type {
@@ -16,9 +19,10 @@ struct c_const {
 		intmax_t i;
 		long double f;
 		vec(struct c_const) c;
+		struct pstr s;
 	};
 };
 
-vec(struct c_const) CONSTANTS;
+size_t gen_constant(struct parse_ctx *ctx);
 
 #endif //!__VALUE__H__
