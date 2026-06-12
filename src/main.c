@@ -1,6 +1,8 @@
+#include "parse/ctx.h"
 #include "parse/lex/toks.h"
 #include "strucs/value.h"
 
 int main() {
+	struct parse_ctx ctx;
 	init_tok_maps();
 }

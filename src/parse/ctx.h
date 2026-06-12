@@ -10,10 +10,12 @@ struct parse_ctx {
 	struct lexer lexer;
 	struct ast_scope scope;
 	struct ast_scope *current;
-	struct arena arena;
+	struct arena *arena;
 
 	vec(struct c_const) constants;
 	vec(struct pstr) identifiers;
 };
+
+void ctx_init(struct parse_ctx *ctx, FILE *file);
 
 #endif //!__CTX__H__

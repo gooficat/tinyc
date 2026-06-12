@@ -19,7 +19,7 @@ static void init_scope(struct ast_scope *scope, struct ast_scope *parent) {
 }
 
 static void *gen_scope(struct parse_ctx *ctx) {
-	struct ast_scope *scope = arena_alloc(&ctx->arena, sizeof(struct ast_scope));
+	struct ast_scope *scope = arena_alloc(ctx->arena, sizeof(struct ast_scope));
 	init_scope(scope, ctx->current);
 	ctx->current = scope;
 	lexer_next(ctx);
@@ -63,7 +63,7 @@ static int gen_node(struct parse_ctx *ctx, struct ast_node *node) {
 		gen_node(ctx, &call.arg);
 		lexer_next(ctx);
 		node->type = AST_CALL;
-		node->val = arena_alloc(&ctx->arena, sizeof(struct ast_call));
+		node->val = arena_alloc(ctx->arena, sizeof(struct ast_call));
 		*((struct ast_call *)node->val) = call;
 	}
 
