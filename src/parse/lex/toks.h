@@ -21,6 +21,8 @@ enum keyword {
 	KW_GOTO,
 
 	KW_IF,
+
+	KW_SIZEOF,
 };
 
 enum punctuator {

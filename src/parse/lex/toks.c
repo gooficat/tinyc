@@ -3,7 +3,7 @@
 #include "utils/vector.h"
 
 static char const *KEYWORDS_UNMAPPED[] = {
-	"signed", "unsigned", "short", "long", "char", "return", "goto", "if", NULL,
+	"signed", "unsigned", "short", "long", "char", "return", "goto", "if", "sizeof", NULL,
 };
 
 static char const *PUNCTUATORS_UNMAPPED[] = {
