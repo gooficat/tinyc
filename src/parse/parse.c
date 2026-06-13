@@ -1,15 +1,51 @@
 #include "parse.h"
 #include "ast.h"
 #include "lex/lex.h"
+#include "lex/tok.h"
 #include "type.h"
 #include "utils/vector.h"
 #include "var.h"
+#include <stdlib.h>
 
 ASTNode tree;
 static ASTScope *current;
 
+static void modify_type(Type *type) {
+	switch (token.indx) {
+	case KW_INT:
+		type->type = TYPE_INT;
+		break;
+	case KW_CHAR:
+		type->type = TYPE_INT;
+		type->igr.precision = INT_CHAR;
+		break;
+	case KW_SHORT:
+		type->igr.precision = INT_SHORT;
+		break;
+	case KW_LONG:
+		if (type->igr.precision == INT_LONG)
+			type->igr.precision = INT_LONG_LONG;
+		else
+			type->igr.precision = INT_LONG;
+		break;
+	case KW_FLOAT:
+		type->flt.precision = FLT_FLOAT;
+		break;
+	case KW_DOUBLE:
+		// TODO not quite right
+		type->flt.precision = FLT_DOUBLE;
+		break;
+	}
+}
+
 static Type *parse_type() {
-	return NULL;
+	Type *type = malloc(sizeof(Type));
+
+	while (token.type == TOK_KEYW && kw_is_type()) {
+		modify_type(type);
+	}
+
+	return type;
 }
 
 static void init_scope(ASTScope *scope) {
@@ -27,7 +63,7 @@ static void handle_order() {
 }
 
 static void handle_keyword() {
-	if (kw_is_type()) {
+	if (kw_is_type() || kw_is_storage()) {
 		handle_decl();
 	} else if (kw_is_order()) {
 		handle_order();

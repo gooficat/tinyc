@@ -160,5 +160,5 @@ bool kw_is_order() {
 }
 
 bool kw_is_storage() {
-	return kw_is_order() && token.indx >= KW_AUTO;
+	return token.indx >= KW_AUTO && token.indx <= KW_INLINE;
 }
