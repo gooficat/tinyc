@@ -17,7 +17,7 @@ struct lexer {
 struct parse_ctx;
 
 void lexer_init(struct lexer *lexer, FILE *file);
-void lexer_next(struct parse_ctx *lexer);
+void lexer_next(struct parse_ctx *ctx);
 void lexer_close(struct lexer *lexer);
 
 #endif //!__LEXER__H__

@@ -5,6 +5,7 @@
 #include "parse/lex/toks.h"
 #include "strucs/nodes.h"
 #include "strucs/symbol.h"
+#include "strucs/types.h"
 #include "utils/arena.h"
 #include "utils/hash.h"
 #include "utils/vector.h"
@@ -31,6 +32,8 @@ static void *gen_scope(struct parse_ctx *ctx) {
 	return scope;
 }
 
+static int decorate_node(struct parse_ctx *ctx, struct ast_node *node);
+
 static int gen_node(struct parse_ctx *ctx, struct ast_node *node) {
 	switch (ctx->lexer.tok.type) {
 	case TK_PUNC:
@@ -55,7 +58,10 @@ static int gen_node(struct parse_ctx *ctx, struct ast_node *node) {
 	default:
 		internal_error();
 	}
+	return decorate_node(ctx, node);
+}
 
+static int decorate_node(struct parse_ctx *ctx, struct ast_node *node) {
 	if (ctx->lexer.tok.type == TK_PUNC && ctx->lexer.tok.val == PN_PAREN_L) {
 		struct ast_call call;
 		call.target = *node;
@@ -84,14 +90,58 @@ static int gen_node(struct parse_ctx *ctx, struct ast_node *node) {
 	return 1;
 }
 
+static struct hash_el *find_ident_rec(struct ast_scope *scope, char const *name) {
+	struct hash_el *el = hashmap_find(&scope->vars_map, name);
+	if (!el) {
+		return find_ident_rec(scope->parent, name);
+	}
+	return el;
+}
+
+static struct c_var *find_ident(struct parse_ctx *ctx, char const *name) {
+	struct hash_el *var = find_ident_rec(ctx->current, name);
+	if (!var) {
+		parse_error(ctx);
+	}
+	return var->value;
+}
+
 static void handle_expr(struct parse_ctx *ctx) {
 	struct ast_node node;
-	if (!gen_node(ctx, &node)) {
+	if (ctx->lexer.tok.type == TK_IDEN) {
+		size_t name = ctx->lexer.tok.val;
+		lexer_next(ctx);
+		if (ctx->lexer.tok.type == TK_PUNC && ctx->lexer.tok.val == PN_COLON) {
+			node.type = AST_LABEL;
+			/**/
+		} else {
+			node.type = AST_REF;
+			node.val = find_ident(ctx, ctx->identifiers[name]);
+			if (!node.val) {
+				parse_error(ctx);
+			}
+			decorate_node(ctx, &node);
+		}
+	} else if (!gen_node(ctx, &node)) {
 		parse_error(ctx);
 	}
 	while (ctx->lexer.tok.type == TK_PUNC && ctx->lexer.tok.val == PN_SEMI) {
 		lexer_next(ctx);
 	}
+}
+
+static struct c_type *gen_type(struct parse_ctx *ctx) {
+}
+
+static void handle_decl(struct parse_ctx *ctx) {
+	size_t idx = vec_len(ctx->current->vars_line);
+	vec_grow(ctx->current->vars_line, 1);
+}
+
+static void handle_order(struct parse_ctx *ctx) {
+}
+
+static void handle_cond(struct parse_ctx *ctx) {
 }
 
 static void handle_stmt(struct parse_ctx *ctx) {
@@ -104,7 +154,19 @@ static void handle_stmt(struct parse_ctx *ctx) {
 		handle_expr(ctx);
 		break;
 	case TK_KEYW:
-		break;
+		if (ctx->lexer.tok.val <= KW_UNION) {
+			handle_decl(ctx);
+			break;
+		}
+		if (ctx->lexer.tok.val <= KW_GOTO) {
+			handle_order(ctx);
+			break;
+		}
+		if (ctx->lexer.tok.val <= KW_IF) {
+			handle_cond(ctx);
+			break;
+		}
+		/*TODO INTRINSICS*/
 	}
 }
 

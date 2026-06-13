@@ -17,6 +17,9 @@ enum keyword {
 	KW_LONG,
 	KW_CHAR,
 
+	KW_STRUCT,
+	KW_UNION,
+
 	KW_RETURN,
 	KW_GOTO,
 

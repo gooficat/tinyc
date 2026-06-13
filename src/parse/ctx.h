@@ -13,7 +13,7 @@ struct parse_ctx {
 	struct arena arena;
 
 	vec(struct c_const) constants;
-	vec(struct pstr) identifiers;
+	vec(char *) identifiers;
 };
 
 void ctx_init(struct parse_ctx *ctx, FILE *file);

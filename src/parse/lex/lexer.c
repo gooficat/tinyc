@@ -3,7 +3,6 @@
 #include "strucs/value.h"
 #include "toks.h"
 #include "utils/hash.h"
-#include "utils/pstr.h"
 #include "utils/vector.h"
 #include <ctype.h>
 #include <stdlib.h>
@@ -77,7 +76,8 @@ rewind:
 		while (isalnum(ctx->lexer.skr[++i]))
 			;
 		vec_grow(ctx->identifiers, 1);
-		pstr_dup(&ctx->identifiers[idx], ctx->lexer.skr, 0, i);
+		ctx->identifiers[idx] = malloc(i);
+		strncpy(ctx->identifiers[idx], ctx->lexer.skr, i);
 		ctx->lexer.skr += i;
 		ctx->lexer.tok.type = TK_IDEN;
 		ctx->lexer.tok.val = idx;
