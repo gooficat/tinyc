@@ -1,7 +1,6 @@
 #ifndef __TYPES__H__
 #define __TYPES__H__
 
-#include "utils/hash.h"
 #include "utils/vector.h"
 #include <stddef.h>
 #include <stdint.h>

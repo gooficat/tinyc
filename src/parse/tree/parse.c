@@ -11,6 +11,14 @@
 #include "utils/vector.h"
 
 static void handle_stmt(struct parse_ctx *ctx);
+static int decorate_node(struct parse_ctx *ctx, struct ast_node *node);
+
+static void add_child(struct parse_ctx *ctx, enum ast_node_type type, void *val) {
+	size_t idx = vec_len(ctx->current->children);
+	ctx->current->children = vec_grow(ctx->current->children, 1);
+	ctx->current->children[idx].type = type;
+	ctx->current->children[idx].val = val;
+}
 
 static void init_scope(struct ast_scope *scope, struct ast_scope *parent) {
 	scope->children = vec_init(struct ast_node);
@@ -33,8 +41,6 @@ static void *gen_scope(struct parse_ctx *ctx) {
 	ctx->current = scope->parent;
 	return scope;
 }
-
-static int decorate_node(struct parse_ctx *ctx, struct ast_node *node);
 
 static int gen_node(struct parse_ctx *ctx, struct ast_node *node) {
 	switch (ctx->lexer.tok.type) {
@@ -119,8 +125,7 @@ static struct c_var *find_ident(struct parse_ctx *ctx, char const *name) {
 }
 
 static void handle_expr(struct parse_ctx *ctx) {
-	ctx->current->children = vec_grow(ctx->current->children, 1);
-	struct ast_node *node = &ctx->current->children[vec_len(ctx->current->children) - 1];
+	struct ast_node node;
 
 	if (ctx->lexer.tok.type == TK_IDEN) {
 		size_t name = ctx->lexer.tok.val;
@@ -132,21 +137,22 @@ static void handle_expr(struct parse_ctx *ctx) {
 			struct c_label *label = arena_alloc(&ctx->arena, sizeof(struct c_label));
 			label->name = ctx->identifiers[name];
 
-			node->type = AST_LABEL;
-			node->val = label;
+			node.type = AST_LABEL;
+			node.val = label;
 
 			hashmap_insert(&ctx->current->labels_map, ctx->identifiers[name], label);
 		} else {
-			node->type = AST_REF;
+			node.type = AST_REF;
 
-			node->val = find_ident(ctx, ctx->identifiers[name]);
-			if (!node->val) {
+			node.val = find_ident(ctx, ctx->identifiers[name]);
+			if (!node.val) {
 				parse_error(ctx);
 			}
 
-			decorate_node(ctx, node);
+			decorate_node(ctx, &node);
 		}
-	} else if (!gen_node(ctx, node)) {
+		add_child(ctx, node.type, node.val);
+	} else if (!gen_node(ctx, &node)) {
 		parse_error(ctx);
 	}
 	while (ctx->lexer.tok.type == TK_PUNC && ctx->lexer.tok.val == PN_SEMI) {
@@ -176,9 +182,11 @@ static void handle_decl(struct parse_ctx *ctx) {
 	hashmap_insert(&ctx->current->vars_map, ctx->identifiers[ctx->lexer.tok.val], (void *)idx);
 	lexer_next(ctx);
 
-	if (ctx->lexer.tok.type == TK_PUNC) {
-		if (ctx->lexer.tok.val == PN_PAREN_L) {
+	if (ctx->lexer.tok.type == TK_PUNC && ctx->lexer.tok.val == PN_PAREN_L) {
+		while (!tok_match(&ctx->lexer.tok, TK_PUNC, PN_PAREN_R)) {
 			lexer_next(ctx);
+			struct c_var var;
+			var.type = gen_type(ctx);
 		}
 	}
 }

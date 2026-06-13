@@ -54,4 +54,6 @@ extern const struct hash_map PUNCTUATORS;
 
 void init_tok_maps();
 
+bool tok_match(struct tok *tok, enum tok_type type, size_t val);
+
 #endif //!__TOKS__H__

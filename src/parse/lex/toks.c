@@ -17,3 +17,7 @@ void init_tok_maps() {
 	hashmap_from_list(KEYWORDS_UNMAPPED, (struct hash_map *)&KEYWORDS);
 	hashmap_from_list(PUNCTUATORS_UNMAPPED, (struct hash_map *)&PUNCTUATORS);
 }
+
+bool tok_match(struct tok *tok, enum tok_type type, size_t val) {
+	return tok->type == type && tok->val == val;
+}
