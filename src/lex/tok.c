@@ -1,4 +1,5 @@
 #include "tok.h"
+#include <search.h>
 
 char const *const KEYWORDS[] = {
 	"int",	  "char",	"short",	"long",
@@ -9,11 +10,11 @@ char const *const KEYWORDS[] = {
 
 	"return", "break",	"continue", "goto",
 
-	"sizeof",
+	"sizeof", NULL,
 };
 
 char const *const PUNCTUATORS[] = {
 	";", ":", ",",
 
-	"(", ")", "[", "]", "{", "}",
+	"(", ")", "[", "]", "{", "}", NULL,
 };

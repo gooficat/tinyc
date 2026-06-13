@@ -13,4 +13,8 @@ typedef struct {
 	Type *type;
 } Var;
 
+typedef struct {
+	char *name;
+} Label;
+
 #endif //!__VAR__H__
