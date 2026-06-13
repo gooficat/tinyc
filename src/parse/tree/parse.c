@@ -17,6 +17,8 @@ static void init_scope(struct ast_scope *scope, struct ast_scope *parent) {
 	scope->vars_line = vec_init(struct c_var);
 	scope->parent = parent;
 	hashmap_init(&scope->vars_map);
+	hashmap_init(&scope->labels_map);
+	hashmap_init(&scope->types_map);
 }
 
 static void *gen_scope(struct parse_ctx *ctx) {
@@ -107,22 +109,27 @@ static struct c_var *find_ident(struct parse_ctx *ctx, char const *name) {
 }
 
 static void handle_expr(struct parse_ctx *ctx) {
-	struct ast_node node;
+	struct ast_node *node = &ctx->current->children[vec_len(ctx->current->children)];
+	vec_grow(ctx->current->children, 1);
 	if (ctx->lexer.tok.type == TK_IDEN) {
 		size_t name = ctx->lexer.tok.val;
 		lexer_next(ctx);
 		if (ctx->lexer.tok.type == TK_PUNC && ctx->lexer.tok.val == PN_COLON) {
-			node.type = AST_LABEL;
-			/**/
+			struct c_label *label = malloc(sizeof(struct c_label));
+			node->type = AST_LABEL;
+			lexer_next(ctx);
+			label->name = ctx->identifiers[name];
+			node->val = label;
+			hashmap_insert(&ctx->current->labels_map, ctx->identifiers[name], label);
 		} else {
-			node.type = AST_REF;
-			node.val = find_ident(ctx, ctx->identifiers[name]);
-			if (!node.val) {
+			node->type = AST_REF;
+			node->val = find_ident(ctx, ctx->identifiers[name]);
+			if (!node->val) {
 				parse_error(ctx);
 			}
-			decorate_node(ctx, &node);
+			decorate_node(ctx, node);
 		}
-	} else if (!gen_node(ctx, &node)) {
+	} else if (!gen_node(ctx, node)) {
 		parse_error(ctx);
 	}
 	while (ctx->lexer.tok.type == TK_PUNC && ctx->lexer.tok.val == PN_SEMI) {
@@ -131,6 +138,7 @@ static void handle_expr(struct parse_ctx *ctx) {
 }
 
 static struct c_type *gen_type(struct parse_ctx *ctx) {
+	// TODO
 }
 
 static void handle_decl(struct parse_ctx *ctx) {

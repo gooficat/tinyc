@@ -10,7 +10,7 @@ struct c_var {
 };
 
 struct c_label {
-	struct pstr name;
+	char *name;
 };
 
 #endif //!__SYMBOL__H__

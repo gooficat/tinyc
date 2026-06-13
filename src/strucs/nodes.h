@@ -34,6 +34,8 @@ struct ast_scope {
 	vec(struct ast_node) children;
 	vec(struct c_var) vars_line;
 	struct hash_map vars_map;
+	struct hash_map labels_map;
+	struct hash_map types_map;
 	struct ast_scope *parent;
 };
 
