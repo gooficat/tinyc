@@ -115,7 +115,7 @@ static void handle_expr(struct parse_ctx *ctx) {
 		size_t name = ctx->lexer.tok.val;
 		lexer_next(ctx);
 		if (ctx->lexer.tok.type == TK_PUNC && ctx->lexer.tok.val == PN_COLON) {
-			struct c_label *label = malloc(sizeof(struct c_label));
+			struct c_label *label = arena_alloc(&ctx->arena, sizeof(struct c_label));
 			node->type = AST_LABEL;
 			lexer_next(ctx);
 			label->name = ctx->identifiers[name];
