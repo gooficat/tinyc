@@ -49,4 +49,9 @@ struct Type {
 	};
 };
 
+typedef struct {
+	char const *name;
+	Type *type;
+} TypeDef;
+
 #endif //!__TYPE__H__
