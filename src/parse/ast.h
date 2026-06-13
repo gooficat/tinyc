@@ -42,4 +42,6 @@ struct ASTNode {
 	};
 };
 
+extern ASTNode tree;
+
 #endif //!__AST__H__

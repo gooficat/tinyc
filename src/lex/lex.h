@@ -8,6 +8,12 @@ void lexer_init(FILE *file);
 void lexer_next();
 void lexer_free();
 
+bool tok_is(int type, size_t idx);
+
+bool kw_is_type();
+bool kw_is_order();
+bool kw_is_storage();
+
 extern Token token;
 
 #endif //!__LEX__H__

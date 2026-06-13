@@ -146,3 +146,19 @@ void lexer_free() {
 	skr = NULL;
 	line_max = 0;
 }
+
+bool tok_is(int type, size_t idx) {
+	return token.type == type && token.indx == idx;
+}
+
+bool kw_is_type() {
+	return token.indx <= KW_INLINE;
+}
+
+bool kw_is_order() {
+	return token.indx >= KW_RETURN && token.indx <= KW_GOTO;
+}
+
+bool kw_is_storage() {
+	return kw_is_order() && token.indx >= KW_AUTO;
+}
