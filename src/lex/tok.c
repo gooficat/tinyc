@@ -2,13 +2,13 @@
 #include <search.h>
 
 char const *const KEYWORDS[] = {
-	"int",	  "char",	"short",	"long",
+	"int",	  "char",	 "short",	 "long",
 
 	"float",  "double",
 
-	"auto",	  "static", "extern",	"inline",
+	"auto",	  "typedef", "static",	 "extern", "inline",
 
-	"return", "break",	"continue", "goto",
+	"return", "break",	 "continue", "goto",
 
 	"sizeof", NULL,
 };
