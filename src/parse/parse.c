@@ -31,15 +31,17 @@ static void modify_type(Type *type) {
 	case KW_FLOAT:
 		type->flt.precision = FLT_FLOAT;
 		break;
-	case KW_DOUBLE:
-		// TODO not quite right
-		type->flt.precision = FLT_DOUBLE;
+	case KW_DOUBLE: // TODO not quite right
+		if (type->igr.precision == INT_LONG)
+			type->flt.precision = FLT_DOUBLE;
+		else
+			type->flt.precision = FLT_DOUBLE;
 		break;
 	}
 }
 
 static Type *parse_type() {
-	Type *type = malloc(sizeof(Type));
+	Type *type = calloc(1, sizeof(Type));
 
 	while (token.type == TOK_KEYW && kw_is_type()) {
 		modify_type(type);
@@ -50,13 +52,71 @@ static Type *parse_type() {
 
 static void init_scope(ASTScope *scope) {
 	scope->children = vec_init(ASTNode);
-	scope->parent = current;
 	scope->vars = vec_init(Var);
-
+	scope->types = vec_init(TypeDef);
+	scope->tagged = vec_init(TypeDef);
+	scope->labels = vec_init(Label);
+	scope->parent = current;
 	current = scope;
 }
 
+static void add_typedef(Type *type, char *name) {
+	size_t idx = vec_len(current->types);
+	current->types = vec_grow(current->types, 1);
+	current->types[idx].type = type;
+	current->types[idx].name = name;
+}
+
+static void add_var(Type *type, char *name, Storage storage) {
+	size_t idx = vec_len(current->vars);
+	current->vars = vec_grow(current->vars, 1);
+	current->vars[idx].name = name;
+	current->vars[idx].type = type;
+	current->vars[idx].storage = storage;
+}
+
+static void add_child(ASTNode *node) {
+	size_t idx = vec_len(current->children);
+	current->children = vec_grow(current->children, 1);
+	current->children[idx] = *node;
+}
+
+static int parse_storage() {
+	return token.indx; // the 2 enums are equivalent
+}
+
 static void handle_decl() {
+	Type *type = calloc(1, sizeof(Type));
+	Storage storage = -1;
+
+	while (token.type == TOK_KEYW) {
+		if (kw_is_storage()) {
+			storage = parse_storage();
+			lexer_next();
+		} else if (kw_is_type()) {
+			modify_type(type);
+		} else {
+		}
+	}
+
+	if (storage == -1) {
+		if (current->parent) {
+			storage = STORE_AUTO;
+		} else {
+			storage = STORE_STATIC;
+		}
+	}
+
+	if (storage == STORE_TYPEDEF) {
+		if (token.type != TOK_IDEN) {
+			// TODO: error?
+		}
+		add_typedef(type, token.iden);
+		lexer_next();
+	} else {
+		add_var(type, token.iden, storage);
+		lexer_next();
+	}
 }
 
 static void handle_order() {
@@ -72,7 +132,13 @@ static void handle_keyword() {
 	}
 }
 
+static void gen_node(ASTNode *node) {
+}
+
 static void handle_expr() {
+	ASTNode node;
+	gen_node(&node);
+	add_child(&node);
 }
 
 static void handle_stmt() {

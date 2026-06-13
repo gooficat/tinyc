@@ -10,6 +10,9 @@ typedef struct ASTScope ASTScope;
 struct ASTScope {
 	vec(ASTNode) children;
 	vec(Var) vars;
+	vec(TypeDef) types;
+	vec(TypeDef) tagged;
+	vec(Label) labels;
 	ASTScope *parent;
 };
 
