@@ -14,6 +14,7 @@ struct Type {
 		TYPE_STRUC,
 		TYPE_ENUM,
 		TYPE_PTR,
+		TYPE_FUNC,
 	} type;
 	union {
 		Type *ptr;
@@ -40,6 +41,11 @@ struct Type {
 		struct {
 			vec(char *) keys;
 		} enu;
+
+		struct {
+			Type *ret_type;
+			vec(Type) params;
+		} func;
 	};
 };
 

@@ -2,6 +2,7 @@
 #define __AST__H__
 
 #include "utils/vector.h"
+
 typedef struct ASTNode ASTNode;
 
 typedef struct {
