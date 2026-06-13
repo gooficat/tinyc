@@ -43,6 +43,7 @@ static int gen_node(struct parse_ctx *ctx, struct ast_node *node) {
 		case PN_BRACE_L: {
 			node->type = AST_SCOPE;
 			node->val = gen_scope(ctx);
+			break;
 		}
 		case PN_PAREN_L:
 		default:
@@ -50,7 +51,7 @@ static int gen_node(struct parse_ctx *ctx, struct ast_node *node) {
 		}
 	case TK_CNST:
 		node->type = AST_CONST;
-		node->val = &ctx->constants[ctx->lexer.tok.val];
+		node->val = (void *)ctx->lexer.tok.val;
 		break;
 	case TK_IDEN:
 	case TK_KEYW:
@@ -67,9 +68,11 @@ static int decorate_node(struct parse_ctx *ctx, struct ast_node *node) {
 	if (ctx->lexer.tok.type == TK_PUNC && ctx->lexer.tok.val == PN_PAREN_L) {
 		struct ast_call call;
 		call.target = *node;
-		lexer_next(ctx);
+
+		lexer_next(ctx); // (
 		gen_node(ctx, &call.arg);
-		lexer_next(ctx);
+		lexer_next(ctx); // )
+
 		node->type = AST_CALL;
 		node->val = arena_alloc(&ctx->arena, sizeof(struct ast_call));
 		*((struct ast_call *)node->val) = call;
@@ -77,14 +80,19 @@ static int decorate_node(struct parse_ctx *ctx, struct ast_node *node) {
 
 	if (ctx->lexer.tok.type == TK_PUNC && ctx->lexer.tok.val == PN_COMMA) { /*chained statements.*/
 		struct ast_node *chain = vec_init(struct ast_node);
-		vec_grow(chain, 1);
+		chain = vec_grow(chain, 1);
 		chain[0] = *node;
+
 		do {
-			size_t i = vec_len(chain);
 			lexer_next(ctx);
-			vec_grow(chain, 1);
+
+			size_t i = vec_len(chain);
+
+			chain = vec_grow(chain, 1);
 			gen_node(ctx, &chain[i]);
+
 		} while (ctx->lexer.tok.type == TK_PUNC && ctx->lexer.tok.val == PN_COMMA);
+
 		node->type = AST_CHAIN;
 		node->val = chain;
 	}
@@ -97,6 +105,7 @@ static struct hash_el *find_ident_rec(struct ast_scope *scope, char const *name)
 	if (!el) {
 		return find_ident_rec(scope->parent, name);
 	}
+
 	return el;
 }
 
@@ -105,28 +114,36 @@ static struct c_var *find_ident(struct parse_ctx *ctx, char const *name) {
 	if (!var) {
 		parse_error(ctx);
 	}
+
 	return var->value;
 }
 
 static void handle_expr(struct parse_ctx *ctx) {
-	struct ast_node *node = &ctx->current->children[vec_len(ctx->current->children)];
-	vec_grow(ctx->current->children, 1);
+	ctx->current->children = vec_grow(ctx->current->children, 1);
+	struct ast_node *node = &ctx->current->children[vec_len(ctx->current->children) - 1];
+
 	if (ctx->lexer.tok.type == TK_IDEN) {
 		size_t name = ctx->lexer.tok.val;
 		lexer_next(ctx);
+
 		if (ctx->lexer.tok.type == TK_PUNC && ctx->lexer.tok.val == PN_COLON) {
-			struct c_label *label = arena_alloc(&ctx->arena, sizeof(struct c_label));
-			node->type = AST_LABEL;
 			lexer_next(ctx);
+
+			struct c_label *label = arena_alloc(&ctx->arena, sizeof(struct c_label));
 			label->name = ctx->identifiers[name];
+
+			node->type = AST_LABEL;
 			node->val = label;
+
 			hashmap_insert(&ctx->current->labels_map, ctx->identifiers[name], label);
 		} else {
 			node->type = AST_REF;
+
 			node->val = find_ident(ctx, ctx->identifiers[name]);
 			if (!node->val) {
 				parse_error(ctx);
 			}
+
 			decorate_node(ctx, node);
 		}
 	} else if (!gen_node(ctx, node)) {
@@ -138,12 +155,32 @@ static void handle_expr(struct parse_ctx *ctx) {
 }
 
 static struct c_type *gen_type(struct parse_ctx *ctx) {
-	// TODO
+	struct c_type *type = malloc(sizeof(struct c_type));
+
+	// TODO this is just assuming int with one keyword for now
+	type->type = C_TYPE_INT;
+	type->params = vec_init(struct c_type);
+	type->width = 4;
+
+	lexer_next(ctx);
+
+	return type;
 }
 
 static void handle_decl(struct parse_ctx *ctx) {
 	size_t idx = vec_len(ctx->current->vars_line);
-	vec_grow(ctx->current->vars_line, 1);
+
+	ctx->current->vars_line = vec_grow(ctx->current->vars_line, 1);
+	ctx->current->vars_line[idx].type = gen_type(ctx);
+
+	hashmap_insert(&ctx->current->vars_map, ctx->identifiers[ctx->lexer.tok.val], (void *)idx);
+	lexer_next(ctx);
+
+	if (ctx->lexer.tok.type == TK_PUNC) {
+		if (ctx->lexer.tok.val == PN_PAREN_L) {
+			lexer_next(ctx);
+		}
+	}
 }
 
 static void handle_order(struct parse_ctx *ctx) {
@@ -175,6 +212,7 @@ static void handle_stmt(struct parse_ctx *ctx) {
 			break;
 		}
 		/*TODO INTRINSICS*/
+		internal_error();
 	}
 }
 

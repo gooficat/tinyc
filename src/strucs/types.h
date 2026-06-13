@@ -2,6 +2,7 @@
 #define __TYPES__H__
 
 #include "utils/hash.h"
+#include "utils/vector.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -20,8 +21,8 @@ enum c_type_type {
 struct c_type {
 	enum c_type_type type;
 	size_t width;
+	vec(struct c_type) params;
 	void *data;
 };
-extern const struct c_type TYPES[];
 
 #endif //!__TYPES__H__
