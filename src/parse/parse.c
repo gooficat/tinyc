@@ -11,7 +11,7 @@
 #include <string.h>
 
 ASTNode tree;
-ASTScope *current;
+ASTScope *current = NULL;
 
 static void gen_node(ASTNode *node);
 static void gen_expr(ASTNode *node);
@@ -175,12 +175,13 @@ static void handle_decl() {
 	}
 }
 
-OrderCType parse_order_type() {
+OrderType parse_order_type() {
 	return token.indx;
 }
 
 static void handle_order() {
 	ASTNode node;
+	node.type = AST_ORDER;
 	node.order.type = parse_order_type();
 	lexer_next();
 
@@ -319,4 +320,5 @@ void parse_tree() {
 
 	while (token.type != TOK_NONE)
 		handle_stmt();
+	current = NULL;
 }

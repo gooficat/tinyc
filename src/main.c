@@ -4,10 +4,22 @@
 #include "lex/lex.h"
 #include "parse/parse.h"
 
+void print_node(ASTNode *node);
+
+void print_scope(ASTScope *scope) {
+	printf("Scope, %zu vars, %zu children\n", vec_len(scope->vars), vec_len(scope->children));
+	for (size_t i = 0; i < vec_len(scope->vars); ++i) {
+		printf("\t%s\n", scope->vars[i].name);
+	}
+	for (size_t i = 0; i < vec_len(scope->children); ++i) {
+		print_node(&scope->children[i]);
+	}
+}
+
 void print_node(ASTNode *node) {
 	switch (node->type) {
 	case AST_SCOPE:
-		printf("Scope, %zu vars, %zu children\n", vec_len(node->scope.vars), vec_len(node->scope.children));
+		print_scope(&node->scope);
 		break;
 	case AST_VREF:
 		printf("Ref to var %s\n", node->vref);
@@ -28,6 +40,7 @@ void print_node(ASTNode *node) {
 		break;
 	case AST_FUNC:
 		printf("Function of name %s\n", node->func.name);
+		print_scope(&node->func.body);
 		break;
 	}
 }

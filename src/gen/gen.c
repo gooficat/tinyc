@@ -66,9 +66,11 @@ static void find_memloc(MemLoc *loc, char const *name) {
 }
 
 static void codegen_cleanup_scope() {
-	current = current->parent;
-	if (current && current_frame)
-		fprintf(out, "\tpop %%ebp\n"); // TODO!!!
+	if (current) {
+		current = current->parent;
+		if (current_frame)
+			fprintf(out, "\tpop %%ebp\n"); // TODO!!!
+	}
 }
 
 static void codegen_order(ASTOrder *order) {
@@ -117,6 +119,18 @@ static void codegen_vref(char *name) {
 	}
 }
 
+static void codegen_cnst(CConst *cnst) {
+	// TODO!!!!! deal with floats not being on eax
+	switch (cnst->type) {
+	case CONST_INT:
+		fprintf(out, "\tmov $%lld, %%eax\n", cnst->i);
+		break;
+	case CONST_FLT:
+	case CONST_STR:
+		error("Non integers not implemented");
+	}
+}
+
 static void codegen_call(ASTCall *call) {
 	codegen_args(call->with);
 	if (call->of->type == AST_VREF) {
@@ -132,7 +146,7 @@ static void codegen_expr(ASTNode *expr) {
 		codegen_scope(&expr->scope);
 		break;
 	case AST_VREF:
-		error("Variable reference as top level expression not allowed");
+		codegen_vref(expr->vref);
 		break;
 	case AST_CHAIN:
 		for (size_t i = 0; i < vec_len(expr->chain); ++i)
@@ -145,7 +159,8 @@ static void codegen_expr(ASTNode *expr) {
 		codegen_order(&expr->order);
 		break;
 	case AST_CNST:
-		error("Constant as top level expression not allowed");
+		codegen_cnst(&expr->cnst);
+		break;
 	case AST_CAST: // TODO allow void cast as top level expression
 		error("Cast as top level expression not allowed");
 		break;
@@ -185,18 +200,6 @@ static void codegen_func(ASTFunc *func) {
 	fputs("\tret\n", out);
 }
 
-static void codegen_cnst(CConst *cnst) {
-	// TODO!!!!! deal with floats not being on eax
-	switch (cnst->type) {
-	case CONST_INT:
-		fprintf(out, "\tmov $%lld, %%eax\n", cnst->i);
-		break;
-	case CONST_FLT:
-	case CONST_STR:
-		error("Non integers not implemented");
-	}
-}
-
 static void codegen_cast(ASTCast *cast) {
 	(void)cast;
 	error("Unimplemented!!");
@@ -208,6 +211,7 @@ static void codegen_node(ASTNode *node) {
 		codegen_scope(&node->scope);
 		break;
 	case AST_VREF:
+		codegen_vref(node->vref);
 		break;
 	case AST_CHAIN:
 		for (size_t i = 0; i < vec_len(node->chain); ++i)

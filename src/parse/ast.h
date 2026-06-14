@@ -26,10 +26,10 @@ typedef enum {
 	ORDER_BREAK,
 	ORDER_CONTINUE,
 	ORDER_GOTO,
-} OrderCType;
+} OrderType;
 
 typedef struct {
-	OrderCType type;
+	OrderType type;
 	union {
 		ASTNode *expr;
 		char *label;
