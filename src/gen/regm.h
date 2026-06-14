@@ -1,6 +1,8 @@
 #ifndef __REGM__H__
 #define __REGM__H__
 
+// register tracking machine
+
 typedef enum {
 	REG_RAX,
 } Register;

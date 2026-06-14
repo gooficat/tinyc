@@ -1,3 +1,4 @@
+#include "gen/gen.h"
 #include "parse/ast.h"
 #pragma warning(disable : 4996)
 #include "lex/lex.h"
@@ -35,4 +36,6 @@ int main() {
 	lexer_init(fopen("test/1.c", "r"));
 	parse_tree();
 	print_node(&tree);
+	codegen_init(fopen("test/1.s", "w"));
+	codegen_tree();
 }
