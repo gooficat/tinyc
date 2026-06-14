@@ -3,6 +3,6 @@
 
 #include "parse/ast.h"
 
-void codegen_tree(ASTNode *node);
+void codegen_tree();
 
 #endif //!__GEN__H__

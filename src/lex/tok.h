@@ -48,7 +48,7 @@ typedef struct {
 		TOK_CNST,
 	} type;
 	union {
-		Const cnst;
+		CConst cnst;
 		size_t indx;
 		char *iden;
 	};

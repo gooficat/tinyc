@@ -12,6 +12,6 @@ typedef struct {
 		long double f;
 		char *s;
 	};
-} Const;
+} CConst;
 
 #endif //!__VAL__H__

@@ -12,11 +12,11 @@ typedef enum {
 	STORE_INLINE,
 } Storage;
 
-typedef struct Var {
+typedef struct CVar {
 	char const *name;
 	Storage storage;
-	Type *type;
-} Var;
+	CType *type;
+} CVar;
 
 typedef struct {
 	char *name;

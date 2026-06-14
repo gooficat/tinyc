@@ -4,10 +4,10 @@
 #include "utils/vector.h"
 #include <stddef.h>
 
-typedef struct Type Type;
-typedef struct Var Var; // TODO!!! ADDRESS ME
+typedef struct CType CType;
+typedef struct CVar CVar; // TODO!!! ADDRESS ME
 
-struct Type {
+struct CType {
 	enum {
 		TYPE_ERR,
 		TYPE_VOID,
@@ -19,7 +19,7 @@ struct Type {
 		TYPE_FUNC,
 	} type;
 	union {
-		Type *ptr;
+		CType *ptr;
 		struct {
 			enum {
 				INT_CHAR,
@@ -38,22 +38,22 @@ struct Type {
 			} precision;
 		} flt;
 		struct {
-			vec(Type) members;
+			vec(CType) members;
 		} struc;
 		struct {
 			vec(char *) keys;
 		} enu;
 
 		struct {
-			Type *ret_type;
-			vec(Var) params;
+			CType *ret_type;
+			vec(CVar) params;
 		} func;
 	};
 };
 
 typedef struct {
 	char const *name;
-	Type *type;
-} TypeDef;
+	CType *type;
+} CTypeDef;
 
 #endif //!__TYPE__H__

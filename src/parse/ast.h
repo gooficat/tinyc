@@ -10,9 +10,9 @@ typedef struct ASTScope ASTScope;
 
 struct ASTScope {
 	vec(ASTNode) children;
-	vec(Var) vars;
-	vec(TypeDef) types;
-	vec(TypeDef) tagged;
+	vec(CVar) vars;
+	vec(CTypeDef) types;
+	vec(CTypeDef) tagged;
 	vec(Label) labels;
 	ASTScope *parent;
 };
@@ -26,10 +26,10 @@ typedef enum {
 	ORDER_BREAK,
 	ORDER_CONTINUE,
 	ORDER_GOTO,
-} OrderType;
+} OrderCType;
 
 typedef struct {
-	OrderType type;
+	OrderCType type;
 	union {
 		ASTNode *expr;
 		Label *label;
@@ -37,12 +37,12 @@ typedef struct {
 } ASTOrder;
 
 typedef struct {
-	Type *to;
+	CType *to;
 	ASTNode *node;
 } ASTCast;
 
 typedef struct {
-	Var *var;
+	CVar *var;
 	ASTScope body;
 } ASTFunc;
 
@@ -59,11 +59,11 @@ struct ASTNode {
 	} type;
 	union {
 		ASTScope scope;
-		Var *vref;
+		CVar *vref;
 		vec(ASTNode) chain;
 		ASTCall call;
 		ASTOrder order;
-		Const cnst;
+		CConst cnst;
 		ASTCast cast;
 		ASTFunc func;
 	};

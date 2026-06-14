@@ -18,7 +18,7 @@ static void gen_expr(ASTNode *node);
 static void handle_stmt();
 static void gen_scope(ASTNode *node);
 
-static void modify_type(Type *type) {
+static void modify_type(CType *type) {
 	switch (token.indx) {
 	case KW_INT:
 		type->type = TYPE_INT;
@@ -49,8 +49,8 @@ static void modify_type(Type *type) {
 	lexer_next();
 }
 
-static Type *parse_type() {
-	Type *type = calloc(1, sizeof(Type));
+static CType *parse_type() {
+	CType *type = calloc(1, sizeof(CType));
 	while (token.type == TOK_KEYW && kw_is_type()) {
 		modify_type(type);
 	}
@@ -60,22 +60,22 @@ static Type *parse_type() {
 
 static void init_scope(ASTScope *scope) {
 	scope->children = vec_init(ASTNode);
-	scope->vars = vec_init(Var);
-	scope->types = vec_init(TypeDef);
-	scope->tagged = vec_init(TypeDef);
+	scope->vars = vec_init(CVar);
+	scope->types = vec_init(CTypeDef);
+	scope->tagged = vec_init(CTypeDef);
 	scope->labels = vec_init(Label);
 	scope->parent = current;
 	current = scope;
 }
 
-static void add_typedef(Type *type, char *name) {
+static void add_typedef(CType *type, char *name) {
 	size_t idx = vec_len(current->types);
 	current->types = vec_grow(current->types, 1);
 	current->types[idx].type = type;
 	current->types[idx].name = name;
 }
 
-static void add_var(Type *type, char const *name, Storage storage) {
+static void add_var(CType *type, char const *name, Storage storage) {
 	size_t idx = vec_len(current->vars);
 	current->vars = vec_grow(current->vars, 1);
 	current->vars[idx].name = name;
@@ -93,7 +93,7 @@ static int parse_storage() {
 	return token.indx; // the 2 enums are equivalent
 }
 
-static void build_var_decl(Var *var) {
+static void build_var_decl(CVar *var) {
 	// TODO!!!! Deal with storage specifiers
 	var->type = parse_type();
 
@@ -103,7 +103,7 @@ static void build_var_decl(Var *var) {
 	}
 }
 
-static void handle_func(Var *var) {
+static void handle_func(CVar *var) {
 	ASTNode func;
 	func.type = AST_FUNC;
 	init_scope(&func.func.body);
@@ -122,7 +122,7 @@ static void handle_func(Var *var) {
 }
 
 static void handle_decl() {
-	Type *type = calloc(1, sizeof(Type));
+	CType *type = calloc(1, sizeof(CType));
 	char *name;
 	Storage storage = -1;
 
@@ -147,11 +147,11 @@ static void handle_decl() {
 	lexer_next();
 
 	if (tok_is(TOK_PUNC, PN_PAREN_L)) {
-		Type *new = calloc(1, sizeof(Type));
+		CType *new = calloc(1, sizeof(CType));
 
 		new->type = TYPE_FUNC;
 		new->func.ret_type = type;
-		new->func.params = vec_init(Var);
+		new->func.params = vec_init(CVar);
 		type = new;
 
 		lexer_next();
@@ -166,7 +166,7 @@ static void handle_decl() {
 
 	if (storage == STORE_TYPEDEF) {
 		if (token.type != TOK_IDEN) {
-			error("Typedef expects identifier");
+			error("CTypedef expects identifier");
 		}
 		add_typedef(type, name);
 	} else {
@@ -197,7 +197,7 @@ Label *find_label(char const *name) {
 	return find_label_rec(name, current);
 }
 
-OrderType parse_order_type() {
+OrderCType parse_order_type() {
 	return token.indx;
 }
 
@@ -229,12 +229,12 @@ static void handle_keyword() {
 	} else if (kw_is_order()) {
 		handle_order();
 	} else {
-		// TODO unimplemented...
+		// TODO
 		error("unimplemented");
 	}
 }
 
-Var *find_var_rec(char const *name, ASTScope *current) {
+CVar *find_var_rec(char const *name, ASTScope *current) {
 	for (size_t i = 0; i < vec_len(current->vars); ++i) {
 		if (!strcmp(name, current->vars[i].name)) {
 			return &current->vars[i];
@@ -246,7 +246,7 @@ Var *find_var_rec(char const *name, ASTScope *current) {
 	add_var(NULL, name, STORE_EXTERN);
 }
 
-Var *find_var(char const *name) {
+CVar *find_var(char const *name) {
 	return find_var_rec(name, current);
 }
 
