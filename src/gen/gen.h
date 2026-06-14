@@ -10,15 +10,14 @@ typedef enum {
 	MEM_EXTERN,
 	MEM_STATIC,
 	MEM_STACK,
-	MEM_REG,
+	// MEM_REG,
 } MemType;
 
 typedef struct {
 	MemType type;
 	union {
-		char const *name;
 		int32_t stack;
-		Register *reg;
+		// Register *reg;
 	};
 } MemLoc;
 
