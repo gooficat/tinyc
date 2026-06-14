@@ -5,6 +5,7 @@
 #include "type.h"
 
 typedef enum {
+	STORE_IMPLICIT = -1,
 	STORE_AUTO = KW_AUTO,
 	STORE_TYPEDEF,
 	STORE_STATIC,

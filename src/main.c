@@ -10,7 +10,7 @@ void print_node(ASTNode *node) {
 		printf("Scope, %zu vars, %zu children\n", vec_len(node->scope.vars), vec_len(node->scope.children));
 		break;
 	case AST_VREF:
-		printf("Ref to var %s\n", node->vref->name);
+		printf("Ref to var %s\n", node->vref);
 		break;
 	case AST_CHAIN:
 		printf("Chain of %zu nodes\n", vec_len(node->chain));

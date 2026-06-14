@@ -1,4 +1,5 @@
 #include "regm.h"
+#include "parse/type.h"
 
 Register REGISTERS[] = {
 	{
@@ -55,4 +56,60 @@ Register REGISTERS[] = {
 		true,
 		true,
 	},
+	{
+		"xmm1",
+		true,
+		true,
+		true,
+	},
+	{
+		"xmm2",
+		true,
+		true,
+		true,
+	},
+	{
+		"xmm3",
+		true,
+		true,
+		true,
+	},
+	{
+		"xmm4",
+		true,
+		true,
+		true,
+	},
+	{
+		"xmm5",
+		true,
+		true,
+		true,
+	},
+	{
+		"xmm6",
+		true,
+		true,
+		true,
+	},
+	{
+		"xmm7",
+		true,
+		true,
+		true,
+	},
 };
+
+Register *take_register(bool floating) {
+	for (size_t i = 0; i < sizeof(REGISTERS) / sizeof(Register); ++i)
+		if (!REGISTERS[i].is_volatile && REGISTERS[i].is_available && (!floating || REGISTERS[i].is_floating))
+			return &REGISTERS[i];
+	for (size_t i = 0; i < sizeof(REGISTERS) / sizeof(Register); ++i)
+		if (REGISTERS[i].is_available && (!floating || REGISTERS[i].is_floating))
+			return &REGISTERS[i];
+	return NULL;
+}
+
+void close_register(Register *reg) {
+	reg->is_available = false;
+}

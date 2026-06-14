@@ -51,9 +51,8 @@ static void modify_type(CType *type) {
 
 static CType *parse_type() {
 	CType *type = calloc(1, sizeof(CType));
-	while (token.type == TOK_KEYW && kw_is_type()) {
+	while (token.type == TOK_KEYW && kw_is_type())
 		modify_type(type);
-	}
 
 	return type;
 }
@@ -63,7 +62,7 @@ static void init_scope(ASTScope *scope) {
 	scope->vars = vec_init(CVar);
 	scope->types = vec_init(CTypeDef);
 	scope->tagged = vec_init(CTypeDef);
-	scope->labels = vec_init(Label);
+	scope->labels = vec_init(char *);
 	scope->parent = current;
 	current = scope;
 }
@@ -112,9 +111,9 @@ static void handle_func(CVar *var) {
 		func.func.body.vars[i] = var->type->func.params[i];
 	}
 	lexer_next();
-	while (!tok_is(TOK_PUNC, PN_BRACE_R)) {
+	while (!tok_is(TOK_PUNC, PN_BRACE_R))
 		handle_stmt();
-	}
+
 	lexer_next();
 	current = current->parent;
 
@@ -124,25 +123,18 @@ static void handle_func(CVar *var) {
 static void handle_decl() {
 	CType *type = calloc(1, sizeof(CType));
 	char *name;
-	Storage storage = -1;
+	Storage storage = STORE_IMPLICIT;
 
 	while (token.type == TOK_KEYW) {
 		if (kw_is_storage()) {
 			storage = parse_storage();
 			lexer_next();
-		} else if (kw_is_type()) {
+		} else if (kw_is_type())
 			modify_type(type);
-		} else {
-		}
+		else
+			error("Unexpected keyword");
 	}
 
-	if (storage == -1) {
-		if (current->parent) {
-			storage = STORE_AUTO;
-		} else {
-			storage = STORE_STATIC;
-		}
-	}
 	name = token.iden;
 	lexer_next();
 
@@ -181,22 +173,6 @@ static void handle_decl() {
 	}
 }
 
-Label *find_label_rec(char const *name, ASTScope *current) {
-	for (size_t i = 0; i < vec_len(current->labels); ++i) {
-		if (!strcmp(name, current->labels[i].name)) {
-			return &current->labels[i];
-		}
-	}
-	if (current->parent) {
-		return find_label_rec(name, current->parent);
-	}
-	error("Unknown label");
-}
-
-Label *find_label(char const *name) {
-	return find_label_rec(name, current);
-}
-
 OrderCType parse_order_type() {
 	return token.indx;
 }
@@ -216,7 +192,7 @@ static void handle_order() {
 	case ORDER_CONTINUE:
 		break;
 	case ORDER_GOTO:
-		node.order.label = find_label(token.iden);
+		node.order.label = token.iden;
 		lexer_next();
 		break;
 	}
@@ -232,22 +208,6 @@ static void handle_keyword() {
 		// TODO
 		error("unimplemented");
 	}
-}
-
-CVar *find_var_rec(char const *name, ASTScope *current) {
-	for (size_t i = 0; i < vec_len(current->vars); ++i) {
-		if (!strcmp(name, current->vars[i].name)) {
-			return &current->vars[i];
-		}
-	}
-	if (current->parent) {
-		return find_var_rec(name, current->parent);
-	}
-	add_var(NULL, name, STORE_EXTERN);
-}
-
-CVar *find_var(char const *name) {
-	return find_var_rec(name, current);
 }
 
 static void gen_scope(ASTNode *node) {
@@ -318,7 +278,7 @@ static void gen_node(ASTNode *node) {
 		error("Unimplemented");
 	case TOK_IDEN:
 		node->type = AST_VREF;
-		node->vref = find_var(token.iden);
+		node->vref = token.iden;
 		lexer_next();
 		break;
 	case TOK_CNST:
@@ -339,24 +299,22 @@ static void handle_expr() {
 }
 
 static void handle_stmt() {
-	if (token.type == TOK_KEYW) {
+	if (token.type == TOK_KEYW)
 		handle_keyword();
-	} else if (token.type == TOK_CNST) {
+	else if (token.type == TOK_CNST)
 		// Terry Davis smh
 		// maybe later
 		error("Token at top level of statement is not allowed");
-	} else if (tok_is(TOK_PUNC, PN_SEMI)) {
+	else if (tok_is(TOK_PUNC, PN_SEMI))
 		lexer_next();
-	} else {
+	else
 		handle_expr();
-	}
 }
 
 void parse_tree() {
 	tree.type = AST_SCOPE;
 	init_scope(&tree.scope);
 
-	while (token.type != TOK_NONE) {
+	while (token.type != TOK_NONE)
 		handle_stmt();
-	}
 }

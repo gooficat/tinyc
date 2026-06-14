@@ -13,7 +13,7 @@ struct ASTScope {
 	vec(CVar) vars;
 	vec(CTypeDef) types;
 	vec(CTypeDef) tagged;
-	vec(Label) labels;
+	vec(char *) labels;
 	ASTScope *parent;
 };
 
@@ -32,7 +32,7 @@ typedef struct {
 	OrderCType type;
 	union {
 		ASTNode *expr;
-		Label *label;
+		char *label;
 	};
 } ASTOrder;
 
@@ -59,7 +59,7 @@ struct ASTNode {
 	} type;
 	union {
 		ASTScope scope;
-		CVar *vref;
+		char *vref;
 		vec(ASTNode) chain;
 		ASTCall call;
 		ASTOrder order;
