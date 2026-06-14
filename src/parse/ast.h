@@ -28,6 +28,11 @@ typedef struct {
 	};
 } ASTOrder;
 
+typedef struct {
+	Type *to;
+	ASTNode *node;
+} ASTCast;
+
 struct ASTNode {
 	enum {
 		AST_SCOPE,
@@ -35,13 +40,17 @@ struct ASTNode {
 		AST_CHAIN,
 		AST_CALL,
 		AST_ORDER,
+		AST_CNST,
+		AST_CAST,
 	} type;
 	union {
 		ASTScope scope;
+		Var *vref;
 		vec(ASTNode) chain;
 		ASTCall call;
-		Var *ref;
 		ASTOrder order;
+		Const cnst;
+		ASTCast cast;
 	};
 };
 

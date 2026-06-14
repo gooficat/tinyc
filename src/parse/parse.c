@@ -1,14 +1,20 @@
 #include "parse.h"
 #include "ast.h"
+#include "error.h"
 #include "lex/lex.h"
 #include "lex/tok.h"
 #include "type.h"
 #include "utils/vector.h"
 #include "var.h"
+#include <stddef.h>
 #include <stdlib.h>
+#include <string.h>
 
 ASTNode tree;
 static ASTScope *current;
+
+static void gen_node(ASTNode *node);
+static void handle_stmt();
 
 static void modify_type(Type *type) {
 	switch (token.indx) {
@@ -67,7 +73,7 @@ static void add_typedef(Type *type, char *name) {
 	current->types[idx].name = name;
 }
 
-static void add_var(Type *type, char *name, Storage storage) {
+static void add_var(Type *type, char const *name, Storage storage) {
 	size_t idx = vec_len(current->vars);
 	current->vars = vec_grow(current->vars, 1);
 	current->vars[idx].name = name;
@@ -109,7 +115,7 @@ static void handle_decl() {
 
 	if (storage == STORE_TYPEDEF) {
 		if (token.type != TOK_IDEN) {
-			// TODO: error?
+			error("Typedef expects identifier");
 		}
 		add_typedef(type, token.iden);
 		lexer_next();
@@ -132,12 +138,105 @@ static void handle_keyword() {
 	}
 }
 
+Var *find_var_rec(char const *name, ASTScope *current) {
+	for (size_t i = 0; i < vec_len(current->vars); ++i) {
+		if (!strcmp(name, current->vars[i].name)) {
+			return &current->vars[i];
+		}
+	}
+	if (current->parent) {
+		return find_var_rec(name, current->parent);
+	}
+	add_var(NULL, name, STORE_EXTERN);
+}
+
+Var *find_var(char const *name) {
+	return find_var_rec(name, current);
+}
+
+static void gen_scope(ASTNode *node) {
+	init_scope(&node->scope);
+	lexer_next();
+	while (!tok_is(TOK_PUNC, PN_BRACE_R)) {
+		handle_stmt();
+	}
+	lexer_next();
+	current = current->parent;
+}
+
+static void gen_expr(ASTNode *node) {
+	gen_node(node);
+	// TODO chains
+	if (tok_is(TOK_PUNC, PN_COMMA)) {
+		vec(ASTNode) chain = vec_init(ASTNode);
+		chain[0] = *node;
+
+		do {
+			lexer_next();
+			size_t i = vec_len(chain);
+			chain = vec_grow(chain, 1);
+			gen_expr(&chain[i]);
+		} while (tok_is(TOK_PUNC, PN_COMMA));
+
+		node->type = AST_CHAIN;
+		node->chain = chain;
+	}
+}
+
+static void gen_cast(ASTNode *node) {
+	node->type = AST_CAST;
+	node->cast.to = parse_type();
+}
+
+static void gen_punc(ASTNode *node) {
+	switch (token.indx) {
+	case PN_PAREN_L:
+		lexer_next();
+		if (token.type == TOK_KEYW && kw_is_type()) {
+			gen_cast(node);
+		} else {
+			gen_expr(node);
+		}
+		if (tok_is(TOK_PUNC, PN_PAREN_R)) {
+			lexer_next();
+			break;
+		} else {
+			error("Unclosed parentheses");
+		}
+	case PN_BRACE_L:
+		gen_scope(node);
+		break;
+	default:
+		error("Unexpected punctuation");
+	}
+}
+
 static void gen_node(ASTNode *node) {
+	switch (token.type) {
+	case TOK_NONE:
+		error("Unexpected end of input");
+	case TOK_PUNC:
+		gen_punc(node);
+		break;
+	case TOK_KEYW:
+		error("Unimplemented");
+	case TOK_IDEN:
+		node->type = AST_VREF;
+		node->vref = find_var(token.iden);
+		break;
+	case TOK_CNST:
+		node->type = AST_CNST;
+		node->cnst = token.cnst;
+		break;
+	}
+	if (tok_is(TOK_PUNC, PN_PAREN_L)) {
+		lexer_next();
+	}
 }
 
 static void handle_expr() {
 	ASTNode node;
-	gen_node(&node);
+	gen_expr(&node);
 	add_child(&node);
 }
 
