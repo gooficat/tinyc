@@ -5,6 +5,8 @@
 #include <stddef.h>
 
 typedef struct Type Type;
+typedef struct Var Var; // TODO!!! ADDRESS ME
+
 struct Type {
 	enum {
 		TYPE_ERR,
@@ -44,7 +46,7 @@ struct Type {
 
 		struct {
 			Type *ret_type;
-			vec(Type) params;
+			vec(Var) params;
 		} func;
 	};
 };

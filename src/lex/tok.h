@@ -33,10 +33,10 @@ enum {
 
 	PN_PAREN_L,
 	PN_PAREN_R,
-	PN_BRACE_L,
-	PN_BRACE_R,
 	PN_BRACK_L,
 	PN_BRACK_R,
+	PN_BRACE_L,
+	PN_BRACE_R,
 };
 
 typedef struct {

@@ -90,10 +90,10 @@ static int lex_cnst() {
 }
 
 static int lex_kword() {
-	for (char const *const *puncs = PUNCTUATORS; *puncs; ++puncs) {
-		size_t len = strlen(*puncs);
-		if (!memcmp(*puncs, skr, len)) {
-			token.indx = puncs - PUNCTUATORS;
+	for (char const *const *kwords = KEYWORDS; *kwords; ++kwords) {
+		size_t len = strlen(*kwords);
+		if (!strncmp(*kwords, skr, len)) {
+			token.indx = kwords - KEYWORDS;
 			skr += len;
 			return 1;
 		}
@@ -102,11 +102,11 @@ static int lex_kword() {
 }
 
 static int lex_punc() {
-	for (char const *const *kwords = PUNCTUATORS; *kwords; ++kwords) {
-		size_t len = strlen(*kwords);
-		if (!memcmp(*kwords, skr, len) && //
+	for (char const *const *puncs = PUNCTUATORS; *puncs; ++puncs) {
+		size_t len = strlen(*puncs);
+		if (!strncmp(*puncs, skr, len) && //
 			!valid_word_char(skr[len])) {
-			token.indx = kwords - KEYWORDS;
+			token.indx = puncs - PUNCTUATORS;
 			skr += len;
 			return 1;
 		}
@@ -137,8 +137,8 @@ void lexer_next() {
 	} else if (lex_kword()) {
 		token.type = TOK_KEYW;
 	} else {
-		token.type = TOK_IDEN;
 		lex_word();
+		token.type = TOK_IDEN;
 	}
 }
 

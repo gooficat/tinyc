@@ -12,7 +12,7 @@ typedef enum {
 	STORE_INLINE,
 } Storage;
 
-typedef struct {
+typedef struct Var {
 	char const *name;
 	Storage storage;
 	Type *type;

@@ -25,6 +25,9 @@ void print_node(ASTNode *node) {
 	case AST_CAST:
 		printf("Cast\n");
 		break;
+	case AST_FUNC:
+		printf("Function of name %s\n", node->func.var->name);
+		break;
 	}
 }
 

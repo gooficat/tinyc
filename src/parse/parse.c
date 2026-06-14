@@ -16,6 +16,7 @@ static ASTScope *current;
 static void gen_node(ASTNode *node);
 static void gen_expr(ASTNode *node);
 static void handle_stmt();
+static void gen_scope(ASTNode *node);
 
 static void modify_type(Type *type) {
 	switch (token.indx) {
@@ -45,11 +46,11 @@ static void modify_type(Type *type) {
 			type->flt.precision = FLT_DOUBLE;
 		break;
 	}
+	lexer_next();
 }
 
 static Type *parse_type() {
 	Type *type = calloc(1, sizeof(Type));
-
 	while (token.type == TOK_KEYW && kw_is_type()) {
 		modify_type(type);
 	}
@@ -92,8 +93,37 @@ static int parse_storage() {
 	return token.indx; // the 2 enums are equivalent
 }
 
+static void build_var_decl(Var *var) {
+	// TODO!!!! Deal with storage specifiers
+	var->type = parse_type();
+
+	if (token.type == TOK_IDEN) {
+		var->name = token.iden;
+		lexer_next();
+	}
+}
+
+static void handle_func(Var *var) {
+	ASTNode func;
+	func.type = AST_FUNC;
+	init_scope(&func.func.body);
+	for (size_t i = 0; i < vec_len(var->type->func.params); ++i) {
+		vec_grow(func.func.body.vars, 1);
+		func.func.body.vars[i] = var->type->func.params[i];
+	}
+	lexer_next();
+	while (!tok_is(TOK_PUNC, PN_BRACE_R)) {
+		handle_stmt();
+	}
+	lexer_next();
+	current = current->parent;
+
+	add_child(&func);
+}
+
 static void handle_decl() {
 	Type *type = calloc(1, sizeof(Type));
+	char *name;
 	Storage storage = -1;
 
 	while (token.type == TOK_KEYW) {
@@ -113,16 +143,41 @@ static void handle_decl() {
 			storage = STORE_STATIC;
 		}
 	}
+	name = token.iden;
+	lexer_next();
+
+	if (tok_is(TOK_PUNC, PN_PAREN_L)) {
+		Type *new = calloc(1, sizeof(Type));
+
+		new->type = TYPE_FUNC;
+		new->func.ret_type = type;
+		new->func.params = vec_init(Var);
+		type = new;
+
+		lexer_next();
+		while (!tok_is(TOK_PUNC, PN_PAREN_R)) {
+			size_t i = vec_len(new->func.params);
+			new->func.params = vec_grow(new->func.params, 1);
+			build_var_decl(&new->func.params[i]);
+			lexer_next();
+		}
+		lexer_next();
+	}
 
 	if (storage == STORE_TYPEDEF) {
 		if (token.type != TOK_IDEN) {
 			error("Typedef expects identifier");
 		}
-		add_typedef(type, token.iden);
-		lexer_next();
+		add_typedef(type, name);
 	} else {
-		add_var(type, token.iden, storage);
-		lexer_next();
+		add_var(type, name, storage);
+
+		if (tok_is(TOK_PUNC, PN_BRACE_L)) {
+			if (type->type != TYPE_FUNC) {
+				error("Not a function declaration");
+			}
+			handle_func(&current->vars[vec_len(current->vars) - 1]);
+		}
 	}
 }
 
@@ -142,9 +197,13 @@ Label *find_label(char const *name) {
 	return find_label_rec(name, current);
 }
 
+OrderType parse_order_type() {
+	return token.indx;
+}
+
 static void handle_order() {
 	ASTNode node;
-	node.order.type = token.indx - KW_RETURN;
+	node.order.type = parse_order_type();
 	lexer_next();
 
 	switch (node.order.type) {
@@ -171,6 +230,7 @@ static void handle_keyword() {
 		handle_order();
 	} else {
 		// TODO unimplemented...
+		error("unimplemented");
 	}
 }
 

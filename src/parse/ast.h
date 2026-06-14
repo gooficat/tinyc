@@ -1,6 +1,7 @@
 #ifndef __AST__H__
 #define __AST__H__
 
+#include "lex/tok.h"
 #include "utils/vector.h"
 #include "var.h"
 
@@ -21,7 +22,7 @@ typedef struct {
 } ASTCall;
 
 typedef enum {
-	ORDER_RETURN,
+	ORDER_RETURN = KW_RETURN,
 	ORDER_BREAK,
 	ORDER_CONTINUE,
 	ORDER_GOTO,
@@ -40,6 +41,11 @@ typedef struct {
 	ASTNode *node;
 } ASTCast;
 
+typedef struct {
+	Var *var;
+	ASTScope body;
+} ASTFunc;
+
 struct ASTNode {
 	enum {
 		AST_SCOPE,
@@ -49,6 +55,7 @@ struct ASTNode {
 		AST_ORDER,
 		AST_CNST,
 		AST_CAST,
+		AST_FUNC,
 	} type;
 	union {
 		ASTScope scope;
@@ -58,6 +65,7 @@ struct ASTNode {
 		ASTOrder order;
 		Const cnst;
 		ASTCast cast;
+		ASTFunc func;
 	};
 };
 
