@@ -20,10 +20,17 @@ typedef struct {
 	ASTNode *of, *with;
 } ASTCall;
 
+typedef enum {
+	ORDER_RETURN,
+	ORDER_BREAK,
+	ORDER_CONTINUE,
+	ORDER_GOTO,
+} OrderType;
+
 typedef struct {
-	int order_type;
+	OrderType type;
 	union {
-		ASTNode *sym;
+		ASTNode *expr;
 		Label *label;
 	};
 } ASTOrder;

@@ -16,9 +16,13 @@ static char *skr;
 static size_t line_max;
 Token token;
 
+static void lexer_next_line();
+
 void lexer_init(FILE *file_) {
 	file = file_;
 	skr = line = malloc(line_max = INITIAL_LINE_MAX);
+	lexer_next_line();
+	lexer_next();
 }
 
 static void lexer_next_line() {
@@ -111,8 +115,6 @@ static int lex_punc() {
 }
 
 static void lex_word() {
-	token.type = TOK_IDEN;
-
 	size_t i = 0;
 	while (valid_word_char(skr[i]))
 		++i;
@@ -120,6 +122,7 @@ static void lex_word() {
 	token.iden = malloc(i + 1);
 	memcpy(token.iden, skr, i);
 	token.iden[i] = '\0';
+	skr += i;
 }
 
 void lexer_next() {
@@ -134,6 +137,7 @@ void lexer_next() {
 	} else if (lex_kword()) {
 		token.type = TOK_KEYW;
 	} else {
+		token.type = TOK_IDEN;
 		lex_word();
 	}
 }

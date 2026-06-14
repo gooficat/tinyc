@@ -14,6 +14,7 @@ ASTNode tree;
 static ASTScope *current;
 
 static void gen_node(ASTNode *node);
+static void gen_expr(ASTNode *node);
 static void handle_stmt();
 
 static void modify_type(Type *type) {
@@ -125,7 +126,42 @@ static void handle_decl() {
 	}
 }
 
+Label *find_label_rec(char const *name, ASTScope *current) {
+	for (size_t i = 0; i < vec_len(current->labels); ++i) {
+		if (!strcmp(name, current->labels[i].name)) {
+			return &current->labels[i];
+		}
+	}
+	if (current->parent) {
+		return find_label_rec(name, current->parent);
+	}
+	error("Unknown label");
+}
+
+Label *find_label(char const *name) {
+	return find_label_rec(name, current);
+}
+
 static void handle_order() {
+	ASTNode node;
+	node.order.type = token.indx - KW_RETURN;
+	lexer_next();
+
+	switch (node.order.type) {
+	case ORDER_RETURN:
+		node.order.expr = malloc(sizeof(ASTNode));
+		gen_expr(node.order.expr);
+		break;
+	case ORDER_BREAK: // Potential future upgrade: add a multibreak to replace nested-loop goto shenanigans
+		break;
+	case ORDER_CONTINUE:
+		break;
+	case ORDER_GOTO:
+		node.order.label = find_label(token.iden);
+		lexer_next();
+		break;
+	}
+	add_child(&node);
 }
 
 static void handle_keyword() {
@@ -223,10 +259,12 @@ static void gen_node(ASTNode *node) {
 	case TOK_IDEN:
 		node->type = AST_VREF;
 		node->vref = find_var(token.iden);
+		lexer_next();
 		break;
 	case TOK_CNST:
 		node->type = AST_CNST;
 		node->cnst = token.cnst;
+		lexer_next();
 		break;
 	}
 	if (tok_is(TOK_PUNC, PN_PAREN_L)) {
@@ -245,6 +283,8 @@ static void handle_stmt() {
 		handle_keyword();
 	} else if (token.type == TOK_CNST) {
 		// Terry Davis smh
+		// maybe later
+		error("Token at top level of statement is not allowed");
 	} else if (tok_is(TOK_PUNC, PN_SEMI)) {
 		lexer_next();
 	} else {
