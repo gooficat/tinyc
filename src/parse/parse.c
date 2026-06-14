@@ -11,7 +11,7 @@
 #include <string.h>
 
 ASTNode tree;
-static ASTScope *current;
+ASTScope *current;
 
 static void gen_node(ASTNode *node);
 static void gen_expr(ASTNode *node);

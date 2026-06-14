@@ -70,5 +70,6 @@ struct ASTNode {
 };
 
 extern ASTNode tree;
+extern ASTScope *current;
 
 #endif //!__AST__H__
