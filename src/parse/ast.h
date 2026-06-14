@@ -42,7 +42,7 @@ typedef struct {
 } ASTCast;
 
 typedef struct {
-	CVar *var;
+	char *name;
 	ASTScope body;
 } ASTFunc;
 

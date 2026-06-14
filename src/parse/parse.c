@@ -107,9 +107,11 @@ static void handle_func(CVar *var) {
 	func.type = AST_FUNC;
 	init_scope(&func.func.body);
 	for (size_t i = 0; i < vec_len(var->type->func.params); ++i) {
-		vec_grow(func.func.body.vars, 1);
-		func.func.body.vars[i] = var->type->func.params[i];
+		size_t j = vec_len(func.func.body.vars);
+		func.func.body.vars = vec_grow(func.func.body.vars, 1);
+		func.func.body.vars[j] = var->type->func.params[i];
 	}
+	func.func.name = (char * /*TODO!!*/)var->name;
 	lexer_next();
 	while (!tok_is(TOK_PUNC, PN_BRACE_R))
 		handle_stmt();

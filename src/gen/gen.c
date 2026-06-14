@@ -67,8 +67,8 @@ static void find_memloc(MemLoc *loc, char const *name) {
 
 static void codegen_cleanup_scope() {
 	current = current->parent;
-
-	fprintf(out, "sub $%lld\n, %%esp", (long long)current_frame); // TODO!!!
+	if (current && current_frame)
+		fprintf(out, "\tpop %%ebp\n"); // TODO!!!
 }
 
 static void codegen_order(ASTOrder *order) {
@@ -155,17 +155,21 @@ static void codegen_expr(ASTNode *expr) {
 }
 
 static void codegen_enter_scope(ASTScope *scope) {
-	current = scope;
-	// TODO stack frame
-	current_frame = 0;
-	for (size_t i = 0; i < vec_len(scope->vars); ++i)
-		if (scope->vars[i].storage == STORE_AUTO)
-			current_frame += WORD_WIDTH; // TODO change to a calculation
+	if (scope->parent) {
+		current = scope;
+		// TODO stack frame
+		current_frame = 0;
+		for (size_t i = 0; i < vec_len(scope->vars); ++i)
+			if (scope->vars[i].storage == STORE_AUTO)
+				current_frame += WORD_WIDTH; // TODO change to a calculation
 
-	fprintf(out,
-			"sub $%lld\n, %%esp"
-			"mov %%esp, %%ebp\n",
-			(long long)current_frame); // TODO!!!
+		if (current_frame)
+			fprintf(out,
+					"\tpush %%ebp\n"
+					"\tsub $%lld, %%esp\n"
+					"\tmov %%esp, %%ebp\n",
+					(long long)current_frame); // TODO!!!
+	}
 }
 
 static void codegen_scope(ASTScope *scope) {
@@ -176,15 +180,16 @@ static void codegen_scope(ASTScope *scope) {
 }
 
 static void codegen_func(ASTFunc *func) {
-	fprintf(out, "%s:\n", func->var->name);
+	fprintf(out, "%s:\n", func->name);
 	codegen_scope(&func->body);
+	fputs("\tret\n", out);
 }
 
 static void codegen_cnst(CConst *cnst) {
 	// TODO!!!!! deal with floats not being on eax
 	switch (cnst->type) {
 	case CONST_INT:
-		fprintf(out, "mov $%lld, %%eax\n", cnst->i);
+		fprintf(out, "\tmov $%lld, %%eax\n", cnst->i);
 		break;
 	case CONST_FLT:
 	case CONST_STR:
@@ -192,8 +197,8 @@ static void codegen_cnst(CConst *cnst) {
 	}
 }
 
-static void codegen_cast(CConst *cnst) {
-	(void)cnst;
+static void codegen_cast(ASTCast *cast) {
+	(void)cast;
 	error("Unimplemented!!");
 }
 
@@ -227,8 +232,8 @@ static void codegen_node(ASTNode *node) {
 }
 
 void codegen_tree() {
-	current = &tree.scope;
 	fprintf(out, ".section \".text\"\n");
+	codegen_scope(&tree.scope);
 }
 
 void codegen_init(FILE *file) {
