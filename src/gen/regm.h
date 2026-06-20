@@ -1,6 +1,8 @@
 #ifndef __REGM__H__
 #define __REGM__H__
 
+#include <stdbool.h>
+
 // x86-32 btw
 
 // register tracking machine

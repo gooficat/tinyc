@@ -2,7 +2,9 @@
 #define __LEX__H__
 
 #include "tok.h"
+#include <stdbool.h>
 #include <stdio.h>
+
 
 void lexer_init(FILE *file);
 void lexer_next();

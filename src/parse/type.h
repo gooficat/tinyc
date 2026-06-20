@@ -2,6 +2,7 @@
 #define __TYPE__H__
 
 #include "utils/vector.h"
+#include <stdbool.h>
 #include <stddef.h>
 
 typedef struct CType CType;
