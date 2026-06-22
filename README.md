@@ -1,2 +1,1 @@
-### Subset C compiler
-WARNING!! This project is the middle of a rewrite and will not function as expected!!
+miniscule c compiler for a pre-ansi c variant

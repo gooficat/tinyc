@@ -1,14 +1,13 @@
 {
     "configurations": [
         {
-            "name": "(gdb) Launch",
+            "name": "(gdb) Attach",
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/bin/${workspaceFolderBasename}.exe",
-            "cwd": "${workspaceRoot}",
+            "preLaunchTask": "CMake: build",
             "internalConsoleOptions": "openOnSessionStart",
-            "preLaunchTask": "CMake: build"
+            "cwd": "${workspaceFolder}",
         }
-        
     ]
 }

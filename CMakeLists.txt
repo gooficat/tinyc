@@ -5,7 +5,7 @@ string(REPLACE " " "_" PROJECT_NAME ${PROJECT_NAME})
 
 project(${PROJECT_NAME})
 
-set(CMAKE_C_STANDARD 23)
+set(CMAKE_C_STANDARD 90)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
@@ -20,18 +20,22 @@ file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/*.c)
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 
-set(_CRT_SECURE_NO_WARNINGS)
+if(NOT DEFINED _CRT_SECURE_NO_WARNINGS)
+  set(_CRT_SECURE_NO_WARNINGS)
+endif()
+
+set(CMAKE_BUILD_TYPE Debug)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   if(NOT MSVC)
-    target_compile_options(${PROJECT_NAME} PRIVATE -g -O0 -Wall -Wextra -Wpedantic)
+    target_compile_options(${PROJECT_NAME} PRIVATE -g -O0) # -Wall -ansi)
   else()
-    target_compile_options(${PROJECT_NAME} PRIVATE /Zi /O0 /W4)
+    target_compile_options(${PROJECT_NAME} PRIVATE /Zi /Od) # /W4 /Za)
   endif()
-else()
+elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
   if(NOT MSVC)
-    target_compile_options(${PROJECT_NAME} PRIVATE -O3 -Wall -Wextra -Wpedantic)
+    target_compile_options(${PROJECT_NAME} PRIVATE -O3) # -Wall -ansi)
   else()
-    target_compile_options(${PROJECT_NAME} PRIVATE /O3 /W4)
+    target_compile_options(${PROJECT_NAME} PRIVATE /Ox) # /W4 /Za)
   endif()
 endif()
