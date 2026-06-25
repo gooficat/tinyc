@@ -81,8 +81,39 @@ static void lexer_handle_number(void) {
 		c_val.type = C_VAL_INT;
 		c_val.val.igr = strtoimax(line + col_num, NULL, 0);
 	}
+	tok.type = TOK_VALUE;
 	col_num = i;
 }
+
+static char *lexer_extract_word(void) {
+	size_t i = 0;
+	char *word;
+	while (is_word_char(line[col_num + i])) {
+		++i;
+	}
+	word = malloc(i + 1);
+	memcpy(word, line + col_num, i);
+	word[i] = '\0';
+	col_num += i;
+	return word;
+}
+
+static void lexer_handle_symbol(void) {
+	tok.type = TOK_IDENT;
+
+	for (tok.val = 0; tok.val < vec_len(IDENTS); ++tok.val) {
+		size_t len = strlen(IDENTS[tok.val]);
+		if (!memcmp(IDENTS[tok.val], line + col_num, len) &&
+			(!is_word_char(line[col_num + len]) || !is_word_char(line[col_num + len - 1]))) {
+			tok.val = tok.val;
+			return;
+		}
+	}
+
+	IDENTS = vec_grow(IDENTS, 1);
+	IDENTS[tok.val] = lexer_extract_word();
+}
+
 void lexer_next(void) {
 repeat:
 	if (line[col_num] == '\0') {
@@ -106,9 +137,16 @@ repeat:
 	}
 
 	for (tok.type = 0; TOKENS[tok.type]; ++tok.type) {
+		size_t len = strlen(TOKENS[tok.type]);
+		if (!memcmp(line + col_num, TOKENS[tok.type], len) && (!is_word_char(line[col_num + len]) || !is_word_char(line[col_num + len - 1]))) {
+			col_num += len;
+			return;
+		}
 	}
+
+	lexer_handle_symbol();
 }
 
 void lexer_close(void) {
-	//
+	fclose(file);
 }
