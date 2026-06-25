@@ -6,7 +6,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-
 typedef enum {
 	C_VAL_INT,
 	C_VAL_FLOAT,
@@ -31,7 +30,7 @@ typedef enum {
 } storag_e;
 typedef struct {
 	char *name;
-	type_s *type;
+	type_s type;
 	storag_e storage;
 } c_sym_s;
 

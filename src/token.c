@@ -46,3 +46,6 @@ bool tok_is_op(void) {
 	// TECHNICALLY ignores *those* operators, dot, arrow and array. but those are really more like punctuators
 	return tok.type >= TOK_OP_INC && tok.type <= TOK_OP_ASS;
 }
+bool tok_is_tag(void) {
+	return tok.type >= TOK_KW_STRUCT && tok.type <= TOK_KW_ENUM;
+}

@@ -7,11 +7,8 @@
 ast_scope_s root;
 ast_scope_s *curr_scop;
 
-void handle_decl(void) {
-}
-
-void gen_expr(ast_node_s *node) {
-}
+void handle_decl(void);
+void gen_expr(ast_node_s *node);
 
 size_t add_sym(c_sym_s *sym) {
 	size_t i = vec_len(curr_scop->symbols);

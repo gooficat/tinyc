@@ -37,5 +37,6 @@ bool tok_is_bin_op(void);
 bool tok_is_punc(void);
 bool tok_is_decl(void);
 bool tok_is_op(void);
+bool tok_is_tag(void);
 
 #endif //!__LEX__H__

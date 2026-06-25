@@ -5,7 +5,6 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-
 typedef struct type_s type_s;
 
 typedef enum {
