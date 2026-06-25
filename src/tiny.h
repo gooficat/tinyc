@@ -18,4 +18,17 @@ typedef struct {
 	c_val_u val;
 } c_val_s;
 
+typedef enum {
+	C_SYM_TDEF,
+	C_SYM_VAR,
+} c_sym_e;
+typedef union {
+	void *placeholder;
+} c_sym_u;
+typedef struct {
+	char *name;
+	c_sym_e typ;
+	c_sym_u info;
+} c_sym_s;
+
 #endif //!__TINY__H__
