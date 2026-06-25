@@ -1,8 +1,11 @@
 #ifndef __TINY__H__
 #define __TINY__H__
 
+#include "tiny_c_libs/vector.h"
 #include "type.h"
+#include <stdbool.h>
 #include <stdint.h>
+
 
 typedef enum {
 	C_VAL_INT,
@@ -31,5 +34,8 @@ typedef struct {
 	type_s *type;
 	storag_e storage;
 } c_sym_s;
+
+extern vec(c_val_s) VALUES;
+extern vec(char *) IDENTS;
 
 #endif //!__TINY__H__

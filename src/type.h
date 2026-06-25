@@ -2,7 +2,9 @@
 #define __TYPE__H__
 
 #include "tiny_c_libs/vector.h"
+#include <stdbool.h>
 #include <stddef.h>
+
 
 typedef struct type_s type_s;
 

@@ -3,6 +3,7 @@
 
 #define LINE_BUF_LEN 4096
 
+#include <stdbool.h>
 #include <stdio.h>
 
 typedef enum {
@@ -17,6 +18,8 @@ typedef struct {
 	tok_e type;
 	size_t val;
 } tok_s;
+
+extern char const *const TOKENS[];
 
 extern char line[LINE_BUF_LEN];
 extern size_t line_num;
