@@ -1,12 +1,13 @@
 #ifndef __TINY__H__
 #define __TINY__H__
 
+#include "type.h"
 #include <stdint.h>
 
 typedef enum {
 	C_VAL_INT,
-	C_VAL_FLT,
-	C_VAL_STR,
+	C_VAL_FLOAT,
+	C_VAL_STRING,
 } c_val_e;
 typedef union {
 	intmax_t igr;
@@ -19,16 +20,16 @@ typedef struct {
 } c_val_s;
 
 typedef enum {
-	C_SYM_TDEF,
-	C_SYM_VAR,
-} c_sym_e;
-typedef union {
-	void *placeholder;
-} c_sym_u;
+	STORE_IMPLICIT,
+	STORE_AUTO,
+	STORE_EXTERN,
+	STORE_STATIC,
+	STORE_TYPEDEF,
+} storag_e;
 typedef struct {
 	char *name;
-	c_sym_e typ;
-	c_sym_u info;
+	type_s *type;
+	storag_e storage;
 } c_sym_s;
 
 #endif //!__TINY__H__

@@ -1,7 +1,7 @@
 #ifndef __TREE__H__
 #define __TREE__H__
 
-#include "lex.h"
+#include "lexer.h"
 #include "tiny.h"
 #include "tiny_c_libs/vector.h"
 
@@ -10,16 +10,18 @@ typedef struct ast_node_s ast_node_s;
 typedef struct {
 	vec(ast_node_s) children;
 	vec(char *) labels;
+	vec(c_sym_s) symbols;
+	ast_node_s *parent;
 } ast_scope_s;
-
-typedef struct {
-	ast_node_s *of;
-	ast_node_s *with;
-} ast_call_s;
 
 typedef struct {
 	vec(ast_node_s) elems;
 } ast_list_s;
+
+typedef struct {
+	ast_node_s *of;
+	ast_list_s args;
+} ast_call_s;
 
 typedef enum {
 	AST_COND_IF,
@@ -43,14 +45,15 @@ typedef struct {
 } ast_order_s;
 
 typedef struct {
-	c_sym_s *sym;	  // the symbol associated with the function
+	c_sym_s *sym; // the symbol associated with the function
+	vec(char *) labels;
 	ast_scope_s body; // the function body
 } ast_func_s;
 
 typedef struct {
 	tok_e op;
 	ast_node_s *base;
-	bool post; // is a postfix operator? like <var>++
+	bool is_post; // is a postfix operator? like <var>++
 } ast_un_op_s;
 
 typedef struct {

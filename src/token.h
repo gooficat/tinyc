@@ -4,6 +4,9 @@ TK(OP_DOT, ".")
 TK(OP_ARROW, "->")
 TK(OP_ARRAY, "[]")
 
+TK(OP_INC, "++")
+TK(OP_DEC, "--")
+
 TK(OP_ADD, "+")
 TK(OP_SUB, "-")
 TK(OP_MUL, "*")
@@ -64,6 +67,11 @@ TK(KW_EXTERN, "extern")
 TK(KW_INLINE, "inline")
 TK(KW_TYPEDEF, "typedef")
 
+TK(KW_COMPLEX, "_Complex")
+TK(KW_IMAGINARY, "_Imaginary")
+
+TK(KW_NORETURN, "_Noreturn")
+
 TK(KW_IF, "if")
 TK(KW_WHILE, "while")
 TK(KW_FOR, "for")
@@ -78,9 +86,5 @@ TK(KW_CONTINUE, "continue")
 TK(KW_GOTO, "goto")
 
 TK(KW_SIZEOF, "sizeof")
-TK(KW_COMPLEX, "_Complex")
-TK(KW_IMAGINARY, "_Imaginary")
-
-TK(KW_NORETURN, "_Noreturn")
 
 #endif
