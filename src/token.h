@@ -1,6 +1,4 @@
-#ifndef TK
-#define TK(id, str)
-#endif
+#ifdef TK
 
 TK(OP_DOT, ".")
 TK(OP_ARROW, "->")
@@ -85,4 +83,4 @@ TK(KW_IMAGINARY, "_Imaginary")
 
 TK(KW_NORETURN, "_Noreturn")
 
-#undef TK
+#endif
