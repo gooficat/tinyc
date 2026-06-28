@@ -29,7 +29,7 @@ typedef enum {
 	STORE_TYPEDEF,
 } storag_e;
 typedef struct {
-	char *name;
+	size_t name;
 	type_s type;
 	storag_e storage;
 } c_sym_s;

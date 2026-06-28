@@ -95,22 +95,56 @@ error:
 	error(ERR_SYNTAX, "Malformed type");
 }
 
-void handle_decl(void) {
+static vec(type_s) parse_params(void) {
+	// TODO it needs to be a type-name pair without storage specification
+	vec(type_s) params = vec_init(type_s);
+}
+
+size_t add_sym(type_s *type, storag_e stor) {
 	c_sym_s sym;
-	memset(&sym, 0, sizeof(c_sym_s));
+	sym.storage = stor;
+	sym.name = tok.val;
+	lexer_next();
+	if (tok.type == TOK_PAREN_L) {
+		sym.type.info.fun.ret_typ = malloc(sizeof(type_s));
+		*sym.type.info.fun.ret_typ = *type;
+		sym.type.type = TYPE_FUNC;
+		sym.type.info.fun.params = parse_params();
+		lexer_next();
+	} else {
+		sym.type = *type;
+	}
+}
+
+void handle_decl(void) {
+	type_s type;
+	storag_e stor = STORE_IMPLICIT;
+	memset(&type, 0, sizeof(type_s));
 	if (tok_is_store()) {
 		// TODO
 	}
 	if (tok_is_tag()) {
 	} else {
 		while (tok_is_decl()) {
-			mod_type(&sym.type);
+			mod_type(&type);
 		}
 	}
 	if (tok_is_store()) {
-		if (sym.storage != STORE_IMPLICIT) {
+		if (stor != STORE_IMPLICIT) {
 			error(ERR_SYNTAX, "Specifying storage more than once");
 		}
 		// TODO
 	}
+	if (tok.type == TOK_IDENT) {
+		add_sym(&type, stor);
+	} else {
+		error(ERR_SYNTAX, "Malformed declaration");
+	}
+	if (tok.type == TOK_COMMA) {
+		do {
+			lexer_next();
+			add_sym(&type, stor);
+		} while (tok.type == TOK_COMMA);
+	}
+	// TODO make sure there's a semicolon
 }
