@@ -13,7 +13,7 @@ static FILE *file;
 
 char line[LINE_BUF_LEN];
 size_t line_num;
-size_t col_num;
+int col_num;
 tok_s tok;
 
 static void lexer_next_line(void) {

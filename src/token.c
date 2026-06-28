@@ -49,3 +49,6 @@ bool tok_is_op(void) {
 bool tok_is_tag(void) {
 	return tok.type >= TOK_KW_STRUCT && tok.type <= TOK_KW_ENUM;
 }
+bool tok_is_store(void) {
+	return tok.type >= TOK_KW_AUTO && tok.type <= TOK_KW_TYPEDEF;
+}

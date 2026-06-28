@@ -20,9 +20,9 @@ typedef enum {
 } type_e;
 
 typedef enum {
+	INT_PLAIN, // the regular, undecorated integer type
 	INT_CHAR,
 	INT_SHORT,
-	INT_PLAIN, // the regular, undecorated integer type
 	INT_LONG,
 	INT_LONG_LONG,
 } int_e;

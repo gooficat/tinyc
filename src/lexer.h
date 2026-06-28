@@ -23,7 +23,7 @@ extern char const *const TOKENS[];
 
 extern char line[LINE_BUF_LEN];
 extern size_t line_num;
-extern size_t col_num;
+extern int col_num;
 extern tok_s tok;
 
 void lexer_open(FILE *file);
@@ -38,5 +38,6 @@ bool tok_is_punc(void);
 bool tok_is_decl(void);
 bool tok_is_op(void);
 bool tok_is_tag(void);
+bool tok_is_store(void);
 
 #endif //!__LEX__H__
