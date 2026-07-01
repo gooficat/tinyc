@@ -28,7 +28,8 @@ typedef enum {
 	STORE_STATIC,
 	STORE_TYPEDEF,
 } storag_e;
-typedef struct {
+
+typedef struct c_sym_s {
 	size_t name;
 	type_s type;
 	storag_e storage;

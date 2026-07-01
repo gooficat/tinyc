@@ -1,4 +1,5 @@
 #include "lexer.h"
+#include "error/error.h"
 #include "tiny.h"
 #include "tiny_c_libs/vector.h"
 #include <ctype.h>
@@ -19,9 +20,8 @@ tok_s tok;
 static void lexer_next_line(void) {
 	if (!fgets(line, LINE_BUF_LEN, file)) {
 		line[0] = '\0';
-	}
-	if (line[strlen(line) - 1] != '\n') {
-		// TODO error for too long lines
+	} else if (line[strlen(line) - 1] != '\n') {
+		error(ERR_SYNTAX, "Line length too long. Try a line below 4095 characters");
 	}
 	++line_num;
 	col_num = 0;
@@ -30,6 +30,8 @@ static void lexer_next_line(void) {
 void lexer_open(FILE *file_) {
 	file = file_;
 	line_num = 0;
+	IDENTS = vec_init(char *);
+	VALUES = vec_init(c_val_s);
 	lexer_next_line();
 	lexer_next();
 }
@@ -121,13 +123,12 @@ repeat:
 		return;
 	}
 	while (isspace(line[col_num])) {
+		if (line[col_num] == '\n') {
+			lexer_next_line();
+			goto repeat;
+		}
 		++col_num;
 	}
-	if (line[col_num] == '\n') {
-		lexer_next_line();
-		goto repeat;
-	}
-
 	if (line[col_num] == '"') {
 		lexer_handle_string();
 	}
@@ -138,7 +139,7 @@ repeat:
 
 	for (tok.type = 0; TOKENS[tok.type]; ++tok.type) {
 		size_t len = strlen(TOKENS[tok.type]);
-		if (!memcmp(line + col_num, TOKENS[tok.type], len) && (!is_word_char(line[col_num + len]) || !is_word_char(line[col_num + len - 1]))) {
+		if (!memcmp(line + col_num, TOKENS[tok.type], len) && (!is_word_char(line[col_num + len - 1]) || !is_word_char(line[col_num + len]))) {
 			col_num += len;
 			return;
 		}

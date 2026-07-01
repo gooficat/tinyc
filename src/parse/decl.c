@@ -1,9 +1,13 @@
 #include "error/error.h"
 #include "lexer.h"
 #include "tiny.h"
+#include "tiny_c_libs/vector.h"
 #include "type.h"
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+
+size_t add_sym(c_sym_s *sym);
 
 static void mod_type(type_s *type) {
 	switch ((int)tok.type) {
@@ -78,6 +82,19 @@ static void mod_type(type_s *type) {
 		}
 		type->info.igr.sign = SIGN_SIGNED;
 		break;
+	case TOK_KW_CONST:
+		type->is_const = true;
+		break;
+	case TOK_KW_VOLATILE:
+		type->is_volat = true;
+		break;
+	case TOK_KW_RESTRICT:
+		type->is_restr = true;
+		break;
+	case TOK_KW_ENUM:
+	case TOK_KW_STRUCT:
+	case TOK_KW_UNION:
+		// TODO
 	default:
 		goto error;
 	}
@@ -95,12 +112,21 @@ error:
 	error(ERR_SYNTAX, "Malformed type");
 }
 
-static vec(type_s) parse_params(void) {
+static vec(c_sym_s) parse_params(void) {
 	// TODO it needs to be a type-name pair without storage specification
-	vec(type_s) params = vec_init(type_s);
+	vec(c_sym_s) params = vec_init(c_sym_s);
+	while (tok.type != TOK_PAREN_R) {
+		c_sym_s *sym = &params[vec_len(params) - 1];
+		memset(sym, 0, sizeof(c_sym_s));
+
+		if (tok.type != TOK_COMMA) {
+			error(ERR_SYNTAX, "Expected comma");
+		}
+	}
+	return params;
 }
 
-size_t add_sym(type_s *type, storag_e stor) {
+size_t gen_sym(type_s *type, storag_e stor) {
 	c_sym_s sym;
 	sym.storage = stor;
 	sym.name = tok.val;
@@ -114,21 +140,22 @@ size_t add_sym(type_s *type, storag_e stor) {
 	} else {
 		sym.type = *type;
 	}
+	return add_sym(&sym);
 }
 
 void handle_decl(void) {
 	type_s type;
 	storag_e stor = STORE_IMPLICIT;
 	memset(&type, 0, sizeof(type_s));
-	if (tok_is_store()) {
-		// TODO
-	}
-	if (tok_is_tag()) {
-	} else {
-		while (tok_is_decl()) {
+
+	while (tok_is_decl()) {
+		if (tok_is_store()) {
+			// TODO
+		} else {
 			mod_type(&type);
 		}
 	}
+
 	if (tok_is_store()) {
 		if (stor != STORE_IMPLICIT) {
 			error(ERR_SYNTAX, "Specifying storage more than once");
@@ -136,14 +163,14 @@ void handle_decl(void) {
 		// TODO
 	}
 	if (tok.type == TOK_IDENT) {
-		add_sym(&type, stor);
+		gen_sym(&type, stor);
 	} else {
 		error(ERR_SYNTAX, "Malformed declaration");
 	}
 	if (tok.type == TOK_COMMA) {
 		do {
 			lexer_next();
-			add_sym(&type, stor);
+			gen_sym(&type, stor);
 		} while (tok.type == TOK_COMMA);
 	}
 	// TODO make sure there's a semicolon

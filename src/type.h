@@ -6,6 +6,7 @@
 #include <stddef.h>
 
 typedef struct type_s type_s;
+typedef struct c_sym_s c_sym_s;
 
 typedef enum {
 	TYPE_NONE,	// type is not deduced yet (used in parsing)
@@ -56,7 +57,7 @@ typedef struct {
 
 typedef struct {
 	type_s *ret_typ;
-	vec(type_s) params;
+	vec(c_sym_s) params;
 } func_s;
 
 typedef union {
@@ -71,7 +72,10 @@ typedef union {
 
 struct type_s {
 	type_e type; // category of type
-	type_u info;
+	type_u info; // type specific information
+	bool is_const;
+	bool is_restr;
+	bool is_volat;
 };
 
 #endif //!__TYPE__H__
