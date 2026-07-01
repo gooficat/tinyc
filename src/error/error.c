@@ -1,6 +1,7 @@
 #include "error.h"
 #include "lexer.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 static char const *const ERROR_TYPES[] = {
 	"INTERNAL",
@@ -20,4 +21,5 @@ void error(error_e type, char const *msg) {
 	if (type == ERR_SYNTAX) {
 		error_print_context();
 	}
+	exit(EXIT_FAILURE);
 }

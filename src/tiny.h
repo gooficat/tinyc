@@ -38,4 +38,6 @@ typedef struct c_sym_s {
 extern vec(c_val_s) VALUES;
 extern vec(char *) IDENTS;
 
+void parse_tree(void);
+
 #endif //!__TINY__H__

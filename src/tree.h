@@ -6,13 +6,13 @@
 #include "tiny_c_libs/vector.h"
 
 typedef struct ast_node_s ast_node_s;
+typedef struct ast_scope_s ast_scope_s;
 
-typedef struct {
+struct ast_scope_s {
 	vec(ast_node_s) children;
-	vec(char *) labels;
 	vec(c_sym_s) symbols;
 	ast_node_s *parent;
-} ast_scope_s;
+};
 
 typedef struct {
 	vec(ast_node_s) elems;
@@ -45,9 +45,9 @@ typedef struct {
 } ast_order_s;
 
 typedef struct {
-	c_sym_s *sym; // the symbol associated with the function
+	size_t sym; // the symbol associated with the function
 	vec(char *) labels;
-	ast_scope_s body; // the function body
+	ast_node_s *body; // the function body
 } ast_func_s;
 
 typedef struct {
