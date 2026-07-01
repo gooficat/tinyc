@@ -25,10 +25,26 @@ inline void handle_paren(ast_node_s *node) {
 	}
 }
 
+inline void gen_scope(ast_node_s *node) {
+	init_scope(node);
+	curr_scop = node;
+
+	curr_scop = curr_scop->val.scope.parent;
+
+	while (tok.type != TOK_BRACE_R) {
+		handle_stmt();
+	}
+	lexer_next();
+}
+
 void gen_expr(ast_node_s *node) {
 	if (tok.type == TOK_IDENT) {
 		node->type = AST_VREF;
-		node->val.vref = tok.val;
+		node->val.idx = tok.val;
+		lexer_next();
+	} else if (tok.type == TOK_VALUE) {
+		node->type = AST_VALUE;
+		node->val.idx = tok.val;
 		lexer_next();
 	} else if (tok_is_op_pref()) {
 		node->type = AST_UN_OP;
@@ -41,8 +57,8 @@ void gen_expr(ast_node_s *node) {
 		switch (tok.type) {
 		case TOK_PAREN_L:
 			handle_paren(node);
-		case TOK_BRACK_L:
 		case TOK_BRACE_L:
+			gen_scope(node);
 			break;
 		default:
 			error(ERR_SYNTAX, "Unexpected token");

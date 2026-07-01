@@ -120,7 +120,7 @@ void lexer_next(void) {
 repeat:
 	if (line[col_num] == '\0') {
 		tok.type = TOK_EOF;
-		return;
+		goto finish;
 	}
 	while (isspace(line[col_num])) {
 		if (line[col_num] == '\n') {
@@ -131,21 +131,26 @@ repeat:
 	}
 	if (line[col_num] == '"') {
 		lexer_handle_string();
+		goto finish;
 	}
 
 	if (isdigit(line[col_num])) {
 		lexer_handle_number();
+		goto finish;
 	}
 
 	for (tok.type = 0; TOKENS[tok.type]; ++tok.type) {
 		size_t len = strlen(TOKENS[tok.type]);
 		if (!memcmp(line + col_num, TOKENS[tok.type], len) && (!is_word_char(line[col_num + len - 1]) || !is_word_char(line[col_num + len]))) {
 			col_num += len;
-			return;
+			goto finish;
 		}
 	}
 
 	lexer_handle_symbol();
+
+finish:
+	printf("current token ends at `%s`\n", line + col_num);
 }
 
 void lexer_close(void) {

@@ -8,7 +8,7 @@ char const *const TOKENS[] = {
 };
 
 bool tok_is_kword(void) {
-	return tok.type >= TOK_KW_INT && tok.type <= TOK_KW_NORETURN;
+	return tok.type >= TOK_KW_INT && tok.type <= TOK_KW_SIZEOF;
 }
 bool tok_is_op_pref(void) {
 	switch ((int)tok.type) {

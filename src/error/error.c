@@ -16,6 +16,7 @@ void error_print_context(void) {
 	fputs(line, stdout);
 	// print a little arrow pointing to where in the line we are
 	printf("%*c^\n", (int)col_num, ' ');
+	printf("Token of type %i\n", tok.type);
 }
 
 void error(error_e type, char const *msg) {

@@ -181,6 +181,8 @@ void gen_func(size_t sidx) {
 	while (tok.type != TOK_BRACE_R) {
 		handle_stmt();
 	}
+	lexer_next();
+
 	curr_scop = node.val.func.body->val.scope.parent;
 
 	add_node(&node);

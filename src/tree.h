@@ -77,9 +77,10 @@ typedef enum {
 	AST_UN_OP,
 	AST_BIN_OP,
 	AST_CAST,
+	AST_VALUE,
 } ast_node_e;
 typedef union {
-	size_t vref;
+	size_t idx;
 	ast_scope_s scope;
 	ast_call_s call;
 	ast_list_s list;

@@ -51,11 +51,15 @@ void gen_order(ast_node_s *order) {
 		order->val.order.val.idx = tok.val;
 		lexer_next();
 		break;
+	default:
+		error(ERR_SYNTAX, "Unexpected token: should be an order");
 	}
 }
 
 void handle_stmt(void) {
-	if (tok_is_decl()) {
+	if (tok.type == TOK_SEMI) {
+		lexer_next();
+	} else if (tok_is_decl()) {
 		handle_decl();
 	} else {
 		ast_node_s node;
@@ -75,10 +79,6 @@ void parse_tree(void) {
 	curr_scop = &root;
 
 	while (tok.type != TOK_EOF) {
-		if (tok.type == TOK_SEMI) {
-			lexer_next();
-		} else {
-			handle_stmt();
-		}
+		handle_stmt();
 	}
 }
