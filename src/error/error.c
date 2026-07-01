@@ -12,7 +12,9 @@ static char const *const ERROR_TYPES[] = {
 };
 
 void error_print_context(void) {
+	// "puts" but with no line flush
 	fputs(line, stdout);
+	// print a little arrow pointing to where in the line we are
 	printf("%*c^\n", (int)col_num, ' ');
 }
 
