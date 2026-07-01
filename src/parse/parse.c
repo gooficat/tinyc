@@ -1,8 +1,10 @@
+#include "error/error.h"
 #include "lexer.h"
 #include "tiny.h"
 #include "tiny_c_libs/vector.h"
 #include "tree.h"
 #include <stddef.h>
+#include <stdlib.h>
 
 ast_node_s root;
 ast_node_s *curr_scop;
@@ -30,13 +32,39 @@ void init_scope(ast_node_s *scope) {
 	scope->val.scope.symbols = vec_init(c_sym_s);
 }
 
+void gen_order(ast_node_s *order) {
+	order->type = AST_ORDER;
+	order->val.order.type = tok.type;
+	lexer_next();
+	switch (order->val.order.type) {
+	case TOK_KW_RETURN:
+		order->val.order.val.expr = malloc(sizeof(ast_node_s));
+		gen_expr(order->val.order.val.expr);
+		break;
+	case TOK_KW_BREAK:
+	case TOK_KW_CONTINUE:
+		break;
+	case TOK_KW_GOTO:
+		if (tok.type != TOK_IDENT) {
+			error(ERR_SYNTAX, "Can only jump to a label");
+		}
+		order->val.order.val.idx = tok.val;
+		lexer_next();
+		break;
+	}
+}
+
 void handle_stmt(void) {
 	if (tok_is_decl()) {
 		handle_decl();
 	} else {
-		ast_node_s expr;
-		gen_expr(&expr);
-		add_node(&expr);
+		ast_node_s node;
+		if (tok_is_kword()) {
+			gen_order(&node);
+		} else {
+			gen_expr(&node);
+		}
+		add_node(&node);
 	}
 }
 
@@ -47,6 +75,10 @@ void parse_tree(void) {
 	curr_scop = &root;
 
 	while (tok.type != TOK_EOF) {
-		handle_stmt();
+		if (tok.type == TOK_SEMI) {
+			lexer_next();
+		} else {
+			handle_stmt();
+		}
 	}
 }

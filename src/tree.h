@@ -35,13 +35,13 @@ typedef struct {
 	ast_node_s *else_; // else option. NULL if no else
 } ast_cond_s;
 
-typedef enum {
-	AST_ORDER_RETURN,
-	AST_ORDER_GOTO,
-	AST_ORDER_BREAK,
+typedef union {
+	ast_node_s *expr;
+	size_t idx;
 } ast_order_e;
 typedef struct {
-	ast_order_e type;
+	int type;
+	ast_order_e val;
 } ast_order_s;
 
 typedef struct {
