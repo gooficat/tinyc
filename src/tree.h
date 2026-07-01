@@ -61,7 +61,13 @@ typedef struct {
 	ast_node_s *left, *right;
 } ast_bin_op_s;
 
+typedef struct {
+	type_s type;
+	ast_node_s *val;
+} ast_cast_s;
+
 typedef enum {
+	AST_VREF,
 	AST_SCOPE,
 	AST_CALL,
 	AST_LIST,
@@ -70,8 +76,10 @@ typedef enum {
 	AST_FUNC,
 	AST_UN_OP,
 	AST_BIN_OP,
+	AST_CAST,
 } ast_node_e;
 typedef union {
+	size_t vref;
 	ast_scope_s scope;
 	ast_call_s call;
 	ast_list_s list;
@@ -80,6 +88,7 @@ typedef union {
 	ast_func_s func;
 	ast_un_op_s un_op;
 	ast_bin_op_s bin_op;
+	ast_cast_s cast;
 } ast_node_u;
 struct ast_node_s {
 	ast_node_e type;

@@ -11,7 +11,7 @@
 
 size_t add_sym(c_sym_s *sym);
 
-static void mod_type(type_s *type) {
+void mod_type(type_s *type) {
 	switch ((int)tok.type) {
 	case TOK_KW_INT:
 		if (type->type != TYPE_NONE) {
@@ -178,7 +178,7 @@ void gen_func(size_t sidx) {
 	// TODO check if this function symbol already exists in the extern lists
 	lexer_next();
 	curr_scop = node.val.func.body;
-	while (tok.type != TOK_BRACK_R) {
+	while (tok.type != TOK_BRACE_R) {
 		handle_stmt();
 	}
 	curr_scop = node.val.func.body->val.scope.parent;
@@ -201,7 +201,7 @@ void handle_decl(void) {
 
 	if (tok.type == TOK_IDENT) {
 		size_t sidx = gen_sym(&type, stor);
-		if (tok.type == TOK_BRACK_L) {
+		if (tok.type == TOK_BRACE_L) {
 			gen_func(sidx);
 		}
 	} else {

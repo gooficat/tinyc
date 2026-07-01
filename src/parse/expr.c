@@ -1,11 +1,35 @@
 #include "error/error.h"
 #include "lexer.h"
+#include "parse.h"
 #include "tree.h"
 #include <stdlib.h>
 
+void gen_expr(ast_node_s *node);
+
+inline void handle_paren(ast_node_s *node) {
+	lexer_next();
+	if (tok_is_decl()) {
+		node->type = AST_CAST;
+		while (tok_is_decl()) {
+			mod_type(&node->val.cast.type);
+		}
+		if (tok.type != TOK_PAREN_R) {
+			error(ERR_SYNTAX, "Unexpected token");
+		}
+		lexer_next();
+		node->val.cast.val = malloc(sizeof(ast_node_s));
+		gen_expr(node->val.cast.val);
+	} else {
+		gen_expr(node); // TODO! the atom of an expression
+		lexer_next();
+	}
+}
+
 void gen_expr(ast_node_s *node) {
 	if (tok.type == TOK_IDENT) {
-
+		node->type = AST_VREF;
+		node->val.vref = tok.val;
+		lexer_next();
 	} else if (tok_is_op_pref()) {
 		node->type = AST_UN_OP;
 		node->val.un_op.op = tok.type;
@@ -16,8 +40,9 @@ void gen_expr(ast_node_s *node) {
 	} else {
 		switch (tok.type) {
 		case TOK_PAREN_L:
-		case TOK_BRACE_L:
+			handle_paren(node);
 		case TOK_BRACK_L:
+		case TOK_BRACE_L:
 			break;
 		default:
 			error(ERR_SYNTAX, "Unexpected token");

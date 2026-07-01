@@ -2,4 +2,4 @@ build
 bin
 .cache
 .vscode/
-
+.VSCodeCounter/
