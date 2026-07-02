@@ -1,29 +1,13 @@
-#include "gen.h"
+#include "mem.h"
 #include "error/error.h"
+#include "gen/gen.h"
 #include "parse/parse.h"
 #include "tiny.h"
 #include "tree.h"
-#include "type.h"
 #include <inttypes.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <vadefs.h>
+#include <string.h>
 
-static FILE *file;
-
-void emit(char const *str, ...) {
-	va_list va;
-	va_start(va, str);
-	fprintf(file, str, va);
-	fflush(file);
-	va_end(va);
-}
-
-void codegen_init(FILE *file_) {
-	file = file_;
-}
-
-size_t calculate_sizeof(type_s *type);
+void emit(char const *str, ...);
 
 size_t calculate_sizeof_struct(struct_s *struc) {
 	size_t width = 0;
@@ -91,14 +75,22 @@ void codegen_prep_frame(ast_node_s *node) {
 		c_sym_s *sym = &node->val.scope.symbols[i];
 		switch (sym->storage) {
 		case STORE_IMPLICIT:
+			if (is_top_scope()) {
+				emit(".comm %s", sym->name);
+				break;
+			}
 		case STORE_AUTO:
 			stack_frame += calculate_sizeof(&sym->type);
 			break;
 		case STORE_EXTERN:
 			emit("extern %s", sym->name);
 		case STORE_STATIC:
-			if (curr_scop) {
+			if (is_top_scope()) {
+				emit(".lcomm %s", sym->name);
+			} else {
+				// TODO disambiguated
 			}
+			break;
 		case STORE_TYPEDEF:
 			break;
 		}
@@ -108,14 +100,20 @@ void codegen_prep_frame(ast_node_s *node) {
 	}
 }
 
-void codegen_scope(ast_node_s *node) {
-	curr_scop = node;
-	codegen_prep_frame(node);
+c_sym_s *codegen_locate_rec(char const *name, ast_node_s *scope) {
+	for (size_t i = 0; i < vec_len(scope->val.scope.symbols); ++i) {
+		c_sym_s *sym = scope->val.scope.symbols + i;
+		// TODO disambiguation
+		if (!strcmp(name, IDENTS[sym->name])) {
+			return sym;
+		}
+	}
+	if (scope->val.scope.parent) {
+		return codegen_locate_rec(name, scope->val.scope.parent);
+	}
+	return NULL;
 }
 
-void codegen_tree(void) {
-	codegen_scope(&root);
-}
-
-void codegen_close(void) {
+c_sym_s *codegen_locate(char const *name) {
+	codegen_locate_rec(name, curr_scop);
 }

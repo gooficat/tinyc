@@ -1,6 +1,7 @@
 #include "error/error.h"
 #include "lexer.h"
 #include "parse.h"
+#include "tiny_c_libs/vector.h"
 #include "tree.h"
 #include <stdlib.h>
 
@@ -37,7 +38,7 @@ inline void gen_scope(ast_node_s *node) {
 	lexer_next();
 }
 
-void gen_expr(ast_node_s *node) {
+void gen_atom(ast_node_s *node) {
 	if (tok.type == TOK_IDENT) {
 		node->type = AST_VREF;
 		node->val.idx = tok.val;
@@ -64,5 +65,51 @@ void gen_expr(ast_node_s *node) {
 		default:
 			error(ERR_SYNTAX, "Unexpected token");
 		}
+	}
+}
+
+void gen_list(ast_list_s *list) {
+	list->elems = vec_init(ast_node_s);
+	for (;;) {
+		size_t idx = vec_len(list->elems);
+		list->elems = vec_grow(list->elems, 1);
+		gen_expr(list->elems + idx);
+		if (tok.type != TOK_COMMA) {
+			break;
+		}
+		lexer_next();
+	}
+}
+
+void gen_expr(ast_node_s *node) {
+	gen_atom(node);
+	if (tok.type == TOK_PAREN_L) {
+		ast_node_s *new = malloc(sizeof(ast_node_s));
+		*new = *node;
+		node->type = AST_CALL;
+		node->val.call.of = new;
+		lexer_next();
+		gen_list(&node->val.call.args);
+		if (tok.type != TOK_PAREN_R) {
+			error(ERR_SYNTAX, "Expected right parentheses");
+		}
+		lexer_next();
+	}
+	if (tok.type == TOK_COMMA) {
+		ast_node_s *new = malloc(sizeof(ast_node_s));
+		*new = *node;
+		node->type = AST_LIST;
+		node->val.list.elems = vec_init(ast_node_s);
+		do {
+			size_t idx = vec_len(node->val.list.elems);
+			lexer_next();
+			node->val.list.elems = vec_grow(node->val.list.elems, 1);
+			gen_expr(node->val.list.elems + idx);
+		} while (tok.type == TOK_COMMA);
+	}
+
+	if (tok_is_bin_op()) {
+		// TODO
+		error(ERR_INTERNAL, "Binary op unimplemented");
 	}
 }
