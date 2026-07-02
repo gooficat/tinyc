@@ -145,9 +145,9 @@ void codegen_prep_frame(ast_node_s *node) {
 		case STORE_IMPLICIT:
 			if (is_top_scope()) {
 				if (sym->type.type != TYPE_FUNC) {
-					emit(".comm %s\n", IDENTS[sym->name]);
+					emit(".comm \"%s\"\n", IDENTS[sym->name]);
 				} else {
-					emit(".globl %s\n", IDENTS[sym->name]);
+					emit(".globl \"%s\"\n", IDENTS[sym->name]);
 				}
 				break;
 			}
@@ -155,11 +155,11 @@ void codegen_prep_frame(ast_node_s *node) {
 			stack_frame += calculate_sizeof(&sym->type);
 			break;
 		case STORE_EXTERN:
-			emit(".extern %s\n", IDENTS[sym->name]);
+			emit(".extern \"%s\"\n", IDENTS[sym->name]);
 			break;
 		case STORE_STATIC:
 			if (is_top_scope()) {
-				emit(".lcomm %s\n", IDENTS[sym->name]);
+				emit(".lcomm \"%s\"\n", IDENTS[sym->name]);
 			} else {
 				// TODO disambiguated
 				// POSSIBLE STRATEGY: assign a unique identifier to each scope, then use a symbol like @ to prevent conflicts

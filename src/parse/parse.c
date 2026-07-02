@@ -26,10 +26,12 @@ void add_node(ast_node_s *node) {
 }
 
 void init_scope(ast_node_s *scope) {
+	static uint64_t disam_ctr = 0;
 	scope->type = AST_SCOPE;
 	scope->val.scope.children = vec_init(ast_node_s);
 	scope->val.scope.parent = curr_scop;
 	scope->val.scope.symbols = vec_init(c_sym_s);
+	scope->val.scope.disam_ctr = ++disam_ctr;
 }
 
 void gen_order(ast_node_s *order) {
@@ -77,6 +79,7 @@ void parse_tree(void) {
 	root.val.scope.parent = NULL;
 	root.val.scope.children = vec_init(ast_node_s);
 	root.val.scope.symbols = vec_init(c_sym_s);
+	root.val.scope.disam_ctr = 0;
 	curr_scop = &root;
 
 	while (tok.type != TOK_EOF) {

@@ -4,6 +4,7 @@
 #include "lexer.h"
 #include "tiny.h"
 #include "tiny_c_libs/vector.h"
+#include <stdint.h>
 
 typedef struct ast_node_s ast_node_s;
 typedef struct ast_scope_s ast_scope_s;
@@ -12,6 +13,7 @@ struct ast_scope_s {
 	vec(ast_node_s) children;
 	vec(c_sym_s) symbols;
 	ast_node_s *parent;
+	uint64_t disam_ctr;
 };
 
 typedef struct {

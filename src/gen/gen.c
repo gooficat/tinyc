@@ -95,7 +95,7 @@ void codegen_call(ast_node_s *node) {
 }
 
 void codegen_func(ast_node_s *node) {
-	emit("%s:\n", IDENTS[node->val.func.sym]);
+	emit("\"%s\":\n", IDENTS[node->val.func.sym]);
 	codegen_expr(node->val.func.body);
 	// emit("ret\n"); TODO add this only for functions where not all paths return a value
 }
@@ -128,10 +128,10 @@ void codegen_expr(ast_node_s *node) {
 			emit("\tmov $%" PRIiMAX ", %%eax\n", VALUES[node->val.idx].val.igr);
 			break;
 		case C_VAL_FLOAT:
-			emit("\tmov $%Lf %%eax\n", VALUES[node->val.idx].val.flt);
+			emit("\tmov $%Lf, %%eax\n", VALUES[node->val.idx].val.flt);
 			break;
-		case C_VAL_STRING: // TODO assign a unique value to the strings
-			error(ERR_INTERNAL, "Unimplemented");
+		case C_VAL_STRING: // we use the index of the string as part of the label
+			emit("\tlea \"@STRING_%zu\", %%eax\n", node->val.idx);
 		}
 		break;
 	}
@@ -146,9 +146,21 @@ void codegen_scope(ast_node_s *node) {
 	curr_scop = node->val.scope.parent;
 }
 
+void codegen_constants(void) {
+	for (size_t i = 0; i < vec_len(VALUES); ++i) {
+		if (VALUES[i].type == C_VAL_STRING) {
+			emit("\"@STRING_%zu\":\n"
+				 "\t.asciz \"%s\"\n",
+				 i, VALUES[i].val.str);
+		}
+	}
+}
+
 void codegen_tree(void) {
 	emit(".section \".text\"\n");
 	codegen_scope(&root);
+	emit(".section \".rodata\"\n");
+	codegen_constants();
 }
 
 void codegen_close(void) {
