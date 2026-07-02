@@ -35,7 +35,9 @@ void codegen_order(ast_node_s *node) {
 		// TODO
 		error(ERR_INTERNAL, "UNIMPLEMENTED ORDER");
 	case TOK_KW_RETURN:
-		// TODO
+		codegen_expr(node->val.order.val.expr);
+		emit("ret\n");
+		break;
 	case TOK_KW_CONTINUE:
 	case TOK_KW_GOTO: // TODO disambiguated symbols
 		error(ERR_INTERNAL, "UNIMPLEMENTED ORDER");
@@ -62,6 +64,7 @@ void codegen_var(char const *const name) {
 }
 
 void codegen_call(ast_node_s *node) {
+	emit("push %%ebp\n");
 	for (size_t i = vec_len(node->val.call.args.elems) - 1; i >= 0; --i) {
 		ast_node_s *param = node->val.call.args.elems + i;
 		size_t size = calculate_sizeof_expr(param);
@@ -75,7 +78,9 @@ void codegen_call(ast_node_s *node) {
 				emit("push %%eax\n");
 			}
 		}
+		// TODO this solution is horrid. use a different approach
 	}
+	emit("mov %%esp, %%ebp\n");
 	if (node->val.call.of == AST_VREF) {
 		emit("call ");
 		codegen_var(IDENTS[node->val.call.of->val.idx]);
@@ -85,6 +90,14 @@ void codegen_call(ast_node_s *node) {
 		emit("call %%eax\n");
 		// TODO error check for type of expr being called...
 	}
+	emit("pop %%ebp\n"
+		 "mov %%ebp, %%esp\n");
+}
+
+void codegen_func(ast_node_s *node) {
+	emit("%s:\n", IDENTS[node->val.func.sym]);
+	codegen_expr(node->val.func.body);
+	// emit("ret\n"); TODO add this only for functions where not all paths return a value
 }
 
 void codegen_expr(ast_node_s *node) {
@@ -98,14 +111,28 @@ void codegen_expr(ast_node_s *node) {
 		break;
 	case AST_LIST:
 	case AST_COND:
+		break;
 	case AST_ORDER:
 		codegen_order(node);
 		break;
 	case AST_FUNC:
+		codegen_func(node);
+		break;
 	case AST_UN_OP:
 	case AST_BIN_OP:
 	case AST_CAST:
+		break;
 	case AST_VALUE:
+		switch (VALUES[node->val.idx].type) {
+		case C_VAL_INT:
+			emit("mov $%" PRIiMAX ", %%eax\n", VALUES[node->val.idx].val.igr);
+			break;
+		case C_VAL_FLOAT:
+			emit("mov $%Lf %%eax\n", VALUES[node->val.idx].val.flt);
+			break;
+		case C_VAL_STRING:
+			error(ERR_INTERNAL, "Unimplemented");
+		}
 		break;
 	}
 }

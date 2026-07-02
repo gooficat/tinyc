@@ -138,7 +138,7 @@ size_t calculate_sizeof(type_s *type) {
 }
 
 void codegen_prep_frame(ast_node_s *node) {
-	size_t stack_frame = 0;
+	size_t stack_frame = ALIGNMENT; // account for the ebp saving
 	for (size_t i = 0; i < vec_len(node->val.scope.symbols); ++i) {
 		c_sym_s *sym = node->val.scope.symbols + i;
 		switch (sym->storage) {
@@ -165,7 +165,7 @@ void codegen_prep_frame(ast_node_s *node) {
 		}
 	}
 	if (stack_frame) {
-		emit("sub %" PRIu32 ", %%esp\n", stack_frame);
+		emit("sub $%" PRIu32 ", %%esp\n", stack_frame);
 	}
 }
 
