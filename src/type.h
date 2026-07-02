@@ -18,6 +18,7 @@ typedef enum {
 	TYPE_STRUC, // structured types
 	TYPE_ENUM,	// enumerated types
 	TYPE_FUNC,	// a function
+	TYPE_ARR,	// an array of a type
 } type_e;
 
 typedef enum {

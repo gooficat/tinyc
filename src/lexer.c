@@ -85,6 +85,9 @@ static void lexer_handle_number(void) {
 	}
 	tok.type = TOK_VALUE;
 	col_num = i;
+	tok.val = vec_len(VALUES);
+	VALUES = vec_grow(VALUES, 1);
+	VALUES[tok.val] = c_val;
 }
 
 static char *lexer_extract_word(void) {

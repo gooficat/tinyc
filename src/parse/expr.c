@@ -57,6 +57,7 @@ void gen_expr(ast_node_s *node) {
 		switch (tok.type) {
 		case TOK_PAREN_L:
 			handle_paren(node);
+			break;
 		case TOK_BRACE_L:
 			gen_scope(node);
 			break;

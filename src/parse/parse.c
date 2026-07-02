@@ -73,6 +73,7 @@ void handle_stmt(void) {
 }
 
 void parse_tree(void) {
+	root.type = AST_SCOPE;
 	root.val.scope.parent = NULL;
 	root.val.scope.children = vec_init(ast_node_s);
 	root.val.scope.symbols = vec_init(c_sym_s);

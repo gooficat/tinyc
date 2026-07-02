@@ -40,4 +40,14 @@ extern vec(char *) IDENTS;
 
 void parse_tree(void);
 
+#define SHORT_WIDTH 2
+#define INT_WIDTH 4
+#define LONG_WIDTH 4
+#define LONG_LONG_WIDTH 8
+#define PTR_WIDTH 8
+#define FLOAT_WIDTH 4
+#define DOUBLE_WIDTH 8
+#define LONG_DOUBLE_WIDTH 8
+#define ALIGNMENT 8
+
 #endif //!__TINY__H__

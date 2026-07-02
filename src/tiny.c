@@ -1,5 +1,9 @@
 #include "tiny.h"
 #include "lexer.h"
+#include "parse/parse.h"
+#include "tiny_c_libs/vector.h"
+#include "tree.h"
+#include <inttypes.h>
 #include <stdio.h>
 
 void print_tok(void) {
@@ -13,9 +17,72 @@ void print_tok(void) {
 	lexer_next();
 }
 
+void print_node(ast_node_s *node) {
+	switch (node->type) {
+	case AST_VREF:
+		printf("Variable %s\n", IDENTS[node->val.idx]);
+		break;
+	case AST_SCOPE:
+		printf("Scope\n");
+		for (size_t i = 0; i < vec_len(node->val.scope.children); ++i) {
+			print_node(&node->val.scope.children[i]);
+		}
+		break;
+	case AST_CALL:
+		printf("Call\n");
+		break;
+	case AST_LIST:
+		printf("List\n");
+		break;
+	case AST_COND:
+		printf("Conditional\n");
+		break;
+	case AST_ORDER:
+		printf("Order\n");
+		switch (node->val.order.type) {
+		case TOK_KW_RETURN:
+			print_node(node->val.order.val.expr);
+			break;
+		case TOK_KW_GOTO:
+			printf("Label %s\n", IDENTS[node->val.order.val.idx]);
+			break;
+		}
+		break;
+	case AST_FUNC:
+		printf("Function\n");
+		print_node(node->val.func.body);
+		break;
+	case AST_UN_OP:
+		printf("Unary op\n");
+		break;
+	case AST_BIN_OP:
+		printf("Binary op\n");
+		break;
+	case AST_CAST:
+		printf("Cast\n");
+		break;
+	case AST_VALUE:
+		printf("Value `");
+		switch (VALUES[node->val.idx].type) {
+		case C_VAL_INT:
+			printf("%" PRIiMAX, VALUES[node->val.idx].val.igr);
+			break;
+		case C_VAL_FLOAT:
+			printf("%Lf", VALUES[node->val.idx].val.flt);
+			break;
+		case C_VAL_STRING:
+			printf("%s", VALUES[node->val.idx].val.str);
+			break;
+		}
+		putchar('`');
+		fflush(stdout);
+		break;
+	}
+}
+
 int main(void) {
 	lexer_open(fopen("./test/1.c", "r"));
 	parse_tree();
-
+	print_node(&root);
 	return 0;
 }
