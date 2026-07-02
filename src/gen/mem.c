@@ -138,13 +138,17 @@ size_t calculate_sizeof(type_s *type) {
 }
 
 void codegen_prep_frame(ast_node_s *node) {
-	size_t stack_frame = ALIGNMENT; // account for the ebp saving
+	size_t stack_frame = 0;
 	for (size_t i = 0; i < vec_len(node->val.scope.symbols); ++i) {
 		c_sym_s *sym = node->val.scope.symbols + i;
 		switch (sym->storage) {
 		case STORE_IMPLICIT:
 			if (is_top_scope()) {
-				emit(".comm %s\n", IDENTS[sym->name]);
+				if (sym->type.type != TYPE_FUNC) {
+					emit(".comm %s\n", IDENTS[sym->name]);
+				} else {
+					emit(".globl %s\n", IDENTS[sym->name]);
+				}
 				break;
 			}
 		case STORE_AUTO:
@@ -158,6 +162,7 @@ void codegen_prep_frame(ast_node_s *node) {
 				emit(".lcomm %s\n", IDENTS[sym->name]);
 			} else {
 				// TODO disambiguated
+				// POSSIBLE STRATEGY: assign a unique identifier to each scope, then use a symbol like @ to prevent conflicts
 			}
 			break;
 		case STORE_TYPEDEF:
@@ -165,7 +170,7 @@ void codegen_prep_frame(ast_node_s *node) {
 		}
 	}
 	if (stack_frame) {
-		emit("sub $%" PRIu32 ", %%esp\n", stack_frame);
+		emit("\tsub $%" PRIu32 ", %%esp\n", stack_frame + ALIGNMENT); // account for the ebp saving
 	}
 }
 

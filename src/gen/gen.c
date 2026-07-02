@@ -20,7 +20,7 @@ bool is_top_scope(void) {
 __attribute__((format(printf, 1, 2))) void emit(char const *str, ...) {
 	va_list va;
 	va_start(va, str);
-	fprintf(file, str, va);
+	vfprintf(file, str, va);
 	va_end(va);
 }
 
@@ -36,7 +36,7 @@ void codegen_order(ast_node_s *node) {
 		error(ERR_INTERNAL, "UNIMPLEMENTED ORDER");
 	case TOK_KW_RETURN:
 		codegen_expr(node->val.order.val.expr);
-		emit("ret\n");
+		emit("\tret\n");
 		break;
 	case TOK_KW_CONTINUE:
 	case TOK_KW_GOTO: // TODO disambiguated symbols
@@ -64,34 +64,34 @@ void codegen_var(char const *const name) {
 }
 
 void codegen_call(ast_node_s *node) {
-	emit("push %%ebp\n");
+	emit("\tpush %%ebp\n");
 	for (size_t i = vec_len(node->val.call.args.elems) - 1; i >= 0; --i) {
 		ast_node_s *param = node->val.call.args.elems + i;
 		size_t size = calculate_sizeof_expr(param);
 		if (param->type == AST_VREF) {
-			emit("push ");
+			emit("\tpush ");
 			codegen_var(IDENTS[param->val.idx]);
 			emit("\n");
 		} else {
 			codegen_expr(param);
 			if (size <= ALIGNMENT) {
-				emit("push %%eax\n");
+				emit("\tpush %%eax\n");
 			}
 		}
 		// TODO this solution is horrid. use a different approach
 	}
 	emit("mov %%esp, %%ebp\n");
 	if (node->val.call.of == AST_VREF) {
-		emit("call ");
+		emit("\tcall ");
 		codegen_var(IDENTS[node->val.call.of->val.idx]);
 		emit("\n");
 	} else {
 		codegen_expr(node->val.call.of);
-		emit("call %%eax\n");
+		emit("\tcall %%eax\n");
 		// TODO error check for type of expr being called...
 	}
-	emit("pop %%ebp\n"
-		 "mov %%ebp, %%esp\n");
+	emit("\tpop %%ebp\n"
+		 "\tmov %%ebp, %%esp\n");
 }
 
 void codegen_func(ast_node_s *node) {
@@ -125,12 +125,12 @@ void codegen_expr(ast_node_s *node) {
 	case AST_VALUE:
 		switch (VALUES[node->val.idx].type) {
 		case C_VAL_INT:
-			emit("mov $%" PRIiMAX ", %%eax\n", VALUES[node->val.idx].val.igr);
+			emit("\tmov $%" PRIiMAX ", %%eax\n", VALUES[node->val.idx].val.igr);
 			break;
 		case C_VAL_FLOAT:
-			emit("mov $%Lf %%eax\n", VALUES[node->val.idx].val.flt);
+			emit("\tmov $%Lf %%eax\n", VALUES[node->val.idx].val.flt);
 			break;
-		case C_VAL_STRING:
+		case C_VAL_STRING: // TODO assign a unique value to the strings
 			error(ERR_INTERNAL, "Unimplemented");
 		}
 		break;
@@ -143,6 +143,7 @@ void codegen_scope(ast_node_s *node) {
 	for (size_t i = 0; i < vec_len(node->val.scope.children); ++i) {
 		codegen_expr(node->val.scope.children + i);
 	}
+	curr_scop = node->val.scope.parent;
 }
 
 void codegen_tree(void) {
