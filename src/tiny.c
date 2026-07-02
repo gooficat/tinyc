@@ -1,4 +1,5 @@
 #include "tiny.h"
+#include "gen/gen.h"
 #include "lexer.h"
 #include "parse/parse.h"
 #include "tiny_c_libs/vector.h"
@@ -82,6 +83,10 @@ void print_node(ast_node_s *node) {
 int main(void) {
 	lexer_open(fopen("./test/1.c", "r"));
 	parse_tree();
+	lexer_close();
 	print_node(&root);
+	codegen_init(fopen("./test/1.s", "w"));
+	codegen_tree();
+	codegen_close();
 	return 0;
 }

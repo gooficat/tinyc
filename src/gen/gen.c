@@ -17,11 +17,10 @@ bool is_top_scope(void) {
 	return !curr_scop->val.scope.parent;
 }
 
-void emit(char const *str, ...) {
+__attribute__((format(printf, 1, 2))) void emit(char const *str, ...) {
 	va_list va;
 	va_start(va, str);
 	fprintf(file, str, va);
-	fflush(file);
 	va_end(va);
 }
 
@@ -43,27 +42,48 @@ void codegen_order(ast_node_s *node) {
 	}
 }
 
+void codegen_var(char const *const name) {
+	mem_s loc;
+	codegen_locate(name, &loc);
+	switch (loc.type) {
+	case MEM_UNFOUND:
+		// TODO
+		error(ERR_INTERNAL, "Extern memory implicitness unimplemented");
+	case MEM_EXTERN:
+	case MEM_STATIC:
+		emit("%s", name);
+	case MEM_STACK:
+		emit("%" PRIi64 "(%%esp)", loc.info.offs);
+		break;
+	case MEM_REGISTER:
+		// TODO
+		break;
+	}
+}
+
 void codegen_call(ast_node_s *node) {
 	for (size_t i = vec_len(node->val.call.args.elems) - 1; i >= 0; --i) {
 		ast_node_s *param = node->val.call.args.elems + i;
 		size_t size = calculate_sizeof_expr(param);
 		if (param->type == AST_VREF) {
-			mem_s loc;
-			codegen_locate(IDENTS[param->val.idx], &loc);
-			switch (loc.type) {
-
-			case MEM_UNFOUND:
-			case MEM_EXTERN:
-			case MEM_STACK:
-			case MEM_STATIC:
-			case MEM_REGISTER:
-				break;
-			}
+			emit("push ");
+			codegen_var(IDENTS[param->val.idx]);
+			emit("\n");
 		} else {
+			codegen_expr(param);
 			if (size <= ALIGNMENT) {
-				emit("push eax");
+				emit("push %%eax\n");
 			}
 		}
+	}
+	if (node->val.call.of == AST_VREF) {
+		emit("call ");
+		codegen_var(IDENTS[node->val.call.of->val.idx]);
+		emit("\n");
+	} else {
+		codegen_expr(node->val.call.of);
+		emit("call %%eax\n");
+		// TODO error check for type of expr being called...
 	}
 }
 
@@ -99,6 +119,7 @@ void codegen_scope(ast_node_s *node) {
 }
 
 void codegen_tree(void) {
+	emit(".section \".text\"\n");
 	codegen_scope(&root);
 }
 
