@@ -74,8 +74,7 @@ void print_node(ast_node_s *node) {
 			printf("%s", VALUES[node->val.idx].val.str);
 			break;
 		}
-		putchar('`');
-		fflush(stdout);
+		fputs("`\n", stdout);
 		break;
 	}
 }

@@ -4,10 +4,80 @@
 #include "parse/parse.h"
 #include "tiny.h"
 #include "tree.h"
+#include "type.h"
 #include <inttypes.h>
+#include <stddef.h>
+#include <stdlib.h>
 #include <string.h>
 
 void emit(char const *str, ...);
+
+c_sym_s *find_var_rec(char *name, ast_node_s *scope) {
+	for (size_t i = 0; i < vec_len(scope->val.scope.symbols); ++i) {
+		if (!strcmp(IDENTS[scope->val.scope.symbols[i].name], name)) {
+			return scope->val.scope.symbols + i;
+		}
+	}
+	if (scope->val.scope.parent) {
+		return find_var_rec(name, scope->val.scope.parent);
+	}
+	return NULL;
+}
+c_sym_s *find_var(char *name) {
+	return find_var_rec(name, curr_scop);
+}
+
+void find_type_of_expr(ast_node_s *node, type_s *type) {
+	switch (node->type) {
+	case AST_VREF: {
+		*type = find_var(IDENTS[node->val.idx])->type;
+		break;
+	}
+	case AST_CALL: {
+		find_type_of_expr(node->val.call.of, type);
+		*type = *type->info.fun.ret_typ;
+		break;
+	}
+	case AST_LIST: {
+		find_type_of_expr(node->val.list.elems + vec_len(node->val.list.elems) - 1, type);
+		break;
+	}
+	case AST_UN_OP:
+		find_type_of_expr(node->val.un_op.base, type);
+		break;
+	case AST_BIN_OP:
+		find_type_of_expr(node->val.bin_op.left, type); // TODO!! check, this may be wrong
+		break;
+	case AST_CAST:
+		*type = node->val.cast.type;
+		break;
+	case AST_VALUE:
+		memset(type, 0, sizeof(type_s));
+		switch (VALUES[node->val.idx].type) {
+		case C_VAL_INT:
+			type->type = TYPE_INT;
+			type->info.igr.sign = SIGN_SIGNED;
+			break;
+		case C_VAL_FLOAT:
+			type->type = TYPE_FLOAT;
+			break;
+		case C_VAL_STRING:
+			type->type = TYPE_PTR;
+			type->info.ptr = calloc(1, sizeof(type_s));
+			type->info.ptr->type = TYPE_INT;
+			type->info.ptr->info.igr.type = INT_CHAR;
+			break;
+		}
+		break;
+	default:
+		error(ERR_CODEGEN, "Cannot do codegen on a node of this type");
+	}
+}
+size_t calculate_sizeof_expr(ast_node_s *node) {
+	type_s type;
+	find_type_of_expr(node, &type);
+	return calculate_sizeof(&type);
+}
 
 size_t calculate_sizeof_struct(struct_s *struc) {
 	size_t width = 0;
@@ -96,24 +166,27 @@ void codegen_prep_frame(ast_node_s *node) {
 		}
 	}
 	if (stack_frame) {
-		emit("sub rsp, %" PRIu32, stack_frame);
+		emit("sub esp, %" PRIu32, stack_frame);
 	}
 }
 
-c_sym_s *codegen_locate_rec(char const *name, ast_node_s *scope) {
+void codegen_locate_rec(char const *name, ast_node_s *scope, mem_s *loc) {
 	for (size_t i = 0; i < vec_len(scope->val.scope.symbols); ++i) {
 		c_sym_s *sym = scope->val.scope.symbols + i;
 		// TODO disambiguation
 		if (!strcmp(name, IDENTS[sym->name])) {
-			return sym;
+			return;
+		}
+		if (sym->storage == STORE_AUTO || (scope->val.scope.parent && sym->storage == STORE_IMPLICIT)) {
+			loc->info.offs += calculate_sizeof(&sym->type);
 		}
 	}
 	if (scope->val.scope.parent) {
-		return codegen_locate_rec(name, scope->val.scope.parent);
+		codegen_locate_rec(name, scope->val.scope.parent, loc);
 	}
-	return NULL;
 }
 
-c_sym_s *codegen_locate(char const *name) {
-	codegen_locate_rec(name, curr_scop);
+void codegen_locate(char const *name, mem_s *loc) {
+	memset(loc, 0, sizeof(mem_s));
+	codegen_locate_rec(name, curr_scop, loc);
 }
