@@ -49,11 +49,11 @@ void codegen_var(char const *const name) {
 	codegen_locate(name, &loc);
 	switch (loc.type) {
 	case MEM_UNFOUND:
-		// TODO
-		error(ERR_INTERNAL, "Extern memory implicitness unimplemented");
+		// error(ERR_INTERNAL, "Extern memory implicitness unimplemented");
 	case MEM_EXTERN:
 	case MEM_STATIC:
-		emit("%s", name);
+		emit("\"%s\"", name);
+		break;
 	case MEM_STACK:
 		emit("%" PRIi64 "(%%esp)", loc.info.offs);
 		break;
@@ -64,24 +64,29 @@ void codegen_var(char const *const name) {
 }
 
 void codegen_call(ast_node_s *node) {
-	emit("\tpush %%ebp\n");
-	for (size_t i = vec_len(node->val.call.args.elems) - 1; i >= 0; --i) {
-		ast_node_s *param = node->val.call.args.elems + i;
-		size_t size = calculate_sizeof_expr(param);
-		if (param->type == AST_VREF) {
-			emit("\tpush ");
-			codegen_var(IDENTS[param->val.idx]);
-			emit("\n");
-		} else {
-			codegen_expr(param);
-			if (size <= ALIGNMENT) {
-				emit("\tpush %%eax\n");
+	if (vec_len(node->val.call.args.elems) > 0) {
+		for (size_t i = vec_len(node->val.call.args.elems) - 1; i != (size_t)-1 /*it's hacky, but it might work*/; --i) {
+			ast_node_s *param;
+			size_t size;
+			param = node->val.call.args.elems + i;
+			size = calculate_sizeof_expr(param);
+
+			if (param->type == AST_VREF) {
+				emit("\tpush ");
+				codegen_var(IDENTS[param->val.idx]);
+				emit("\n");
+			} else {
+				codegen_expr(param);
+				if (size <= ALIGNMENT) {
+					emit("\tpush %%eax\n");
+				}
 			}
+			// TODO this solution is horrid. use a different approach like a full subtraction
 		}
-		// TODO this solution is horrid. use a different approach
 	}
-	emit("mov %%esp, %%ebp\n");
-	if (node->val.call.of == AST_VREF) {
+	emit("\tpush %%ebp\n");
+	emit("\tmov %%esp, %%ebp\n");
+	if (node->val.call.of->type == AST_VREF) {
 		emit("\tcall ");
 		codegen_var(IDENTS[node->val.call.of->val.idx]);
 		emit("\n");
@@ -103,6 +108,7 @@ void codegen_func(ast_node_s *node) {
 void codegen_expr(ast_node_s *node) {
 	switch (node->type) {
 	case AST_VREF:
+		break;
 	case AST_SCOPE:
 		codegen_scope(node);
 		break;
@@ -132,6 +138,7 @@ void codegen_expr(ast_node_s *node) {
 			break;
 		case C_VAL_STRING: // we use the index of the string as part of the label
 			emit("\tlea \"@STRING_%zu\", %%eax\n", node->val.idx);
+			break;
 		}
 		break;
 	}

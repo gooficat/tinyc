@@ -98,4 +98,6 @@ struct ast_node_s {
 	ast_node_u val;
 };
 
+void print_node(ast_node_s *node);
+
 #endif //!__TREE__H__

@@ -3,6 +3,7 @@
 #include "gen/gen.h"
 #include "parse/parse.h"
 #include "tiny.h"
+#include "tiny_c_libs/vector.h"
 #include "tree.h"
 #include "type.h"
 #include <inttypes.h>
@@ -21,14 +22,28 @@ c_sym_s *find_var_rec(char *name, ast_node_s *scope) {
 	}
 	return NULL;
 }
-c_sym_s *find_var(char *name) {
-	return find_var_rec(name, curr_scop);
+c_sym_s *find_var(size_t iden_idx) {
+	c_sym_s *var = find_var_rec(IDENTS[iden_idx], curr_scop);
+	if (!var) {
+		size_t new_idx = vec_len(curr_scop->val.scope.symbols);
+		curr_scop->val.scope.symbols = vec_grow(curr_scop->val.scope.symbols, 1);
+		curr_scop->val.scope.symbols[new_idx].name = iden_idx;
+		curr_scop->val.scope.symbols[new_idx].storage = STORE_EXTERN;
+		curr_scop->val.scope.symbols[new_idx].type.type = TYPE_FUNC;
+		curr_scop->val.scope.symbols[new_idx].type.info.fun.params = vec_init(c_sym_s);
+		curr_scop->val.scope.symbols[new_idx].type.info.fun.ret_typ = calloc(1, sizeof(c_sym_s));
+		curr_scop->val.scope.symbols[new_idx].type.info.fun.ret_typ->type = TYPE_INT;
+		curr_scop->val.scope.symbols[new_idx].type.info.fun.ret_typ->info.igr.sign = SIGN_SIGNED;
+
+		var = curr_scop->val.scope.symbols + new_idx;
+	}
+	return var;
 }
 
 void find_type_of_expr(ast_node_s *node, type_s *type) {
 	switch (node->type) {
 	case AST_VREF: {
-		*type = find_var(IDENTS[node->val.idx])->type;
+		*type = find_var(node->val.idx)->type;
 		break;
 	}
 	case AST_CALL: {
@@ -98,6 +113,7 @@ size_t calculate_sizeof_struct(struct_s *struc) {
 size_t calculate_sizeof(type_s *type) {
 	switch (type->type) {
 	case TYPE_NONE:
+		error(ERR_INTERNAL, "Trying to calculate sizeof on nil type");
 	case TYPE_ERR:
 		error(ERR_INTERNAL, "Trying to calculate sizeof on errorful type");
 	case TYPE_INT:
@@ -150,11 +166,14 @@ void codegen_prep_frame(ast_node_s *node) {
 					emit(".globl \"%s\"\n", IDENTS[sym->name]);
 				}
 				break;
+			} else if (sym->type.type == TYPE_FUNC) {
+				goto STORE_EXTERN;
 			}
 		case STORE_AUTO:
 			stack_frame += calculate_sizeof(&sym->type);
 			break;
 		case STORE_EXTERN:
+		STORE_EXTERN:
 			emit(".extern \"%s\"\n", IDENTS[sym->name]);
 			break;
 		case STORE_STATIC:

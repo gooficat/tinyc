@@ -81,11 +81,11 @@ void print_node(ast_node_s *node) {
 }
 
 int main(void) {
-	lexer_open(fopen("./test/1.c", "r"));
+	lexer_open(fopen("./test/2.c", "r"));
 	parse_tree();
 	lexer_close();
 	print_node(&root);
-	codegen_init(fopen("./test/1.s", "w"));
+	codegen_init(fopen("./test/2.s", "w"));
 	codegen_tree();
 	codegen_close();
 	return 0;
