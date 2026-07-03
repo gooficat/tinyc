@@ -48,23 +48,24 @@ static void lexer_handle_string(void) {
 	while (line[col_num + i - 1] == '\\' || line[col_num + i] != '"') {
 		++i;
 	}
-
-	for (size_t j = 0; j < vec_len(VALUES); ++j) {
-		if (VALUES[j].type == C_VAL_STRING && !strncmp(VALUES[j].val.str, line + col_num, i)) {
-			tok.val = j;
-			return;
+	if (vec_len(VALUES)) {
+		for (size_t j = 0; j < vec_len(VALUES); ++j) {
+			if (VALUES[j].type == C_VAL_STRING && !strncmp(VALUES[j].val.str, line + col_num, i)) {
+				tok.val = j;
+				return;
+			}
 		}
 	}
 
 	str = malloc(i + 1);
 	memcpy(str, line + col_num, i);
-	str[col_num] = '\0';
+	str[i] = '\0';
 	col_num += i + 1;
 
-	i = vec_len(VALUES);
+	tok.val = vec_len(VALUES);
 	VALUES = vec_grow(VALUES, 1);
-	VALUES[i].type = C_VAL_STRING;
-	VALUES[i].val.str = str;
+	VALUES[tok.val].type = C_VAL_STRING;
+	VALUES[tok.val].val.str = str;
 }
 
 static void lexer_handle_number(void) {
