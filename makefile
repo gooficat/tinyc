@@ -1,12 +1,12 @@
 CC := gcc
-LD := ld
+LD := gcc
 CC_ARGS := -g -Wall -Wextra -Wpedantic -O0
-LD_ARGS := -lc
+LD_ARGS :=
 
-TARGET := tinykern.bin
+TARGET := tinyc
 
 SRC_DIR := src
-OBJ_DIR := obj
+OBJ_DIR := .obj
 
 
 SRCS := $(wildcard $(SRC_DIR)/*.c)
@@ -22,7 +22,6 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	$(CC) $(CC_ARGS) -c $< -o $@
 
 clean:
-	rm -rf $(OBJ_DIR) $(TARGET)
-
+	rm -f $(TARGET) $(SRC_DIR)/* $(OBJ_DIR)/*
 
 .PHONY: all clean

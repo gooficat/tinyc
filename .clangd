@@ -1,3 +1,9 @@
 CompileFlags:
-  Add: -g -Wall -Wextra -Wpedantic -O0
+  Add:
+    - -g
+    - -Wall
+    - -Wextra
+    - -Wpedantic
+    - -O0
+    - -I./src
   Compiler: gcc
