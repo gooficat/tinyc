@@ -1,6 +1,4 @@
-build
-bin
-.cache
-.vscode/
-.VSCodeCounter/
-test/*.s
+Makefile
+bin/
+obj/
+*.make
