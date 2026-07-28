@@ -1,3 +1,0 @@
-[submodule "tiny_c_libs"]
-	path = src/tiny_c_libs
-	url = https://github.com/gooficat/tiny_c_libs.git
