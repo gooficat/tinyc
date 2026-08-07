@@ -78,6 +78,40 @@ struct {
     } constants;
 } pool = {0};
 
+struct {
+    struct {
+        struct c_var {
+            enum {
+                C_VAR_TYPEDEF,
+                C_VAR_STATIC,
+                C_VAR_INLINE,
+                C_VAR_AUTO,
+            } storage;
+            struct c_type {
+                enum {
+                    C_TYPE_NONE,
+                    C_TYPE_ERR,
+                    C_TYPE_INT,
+                    C_TYPE_FLOAT,
+                    C_TYPE_STRUC,
+                    C_TYPE_ARRAY,
+                    C_TYPE_POINTER,
+                } type;
+                int sign;
+                enum {
+                    LENGTH_NONE,
+                    LENGTH_SHORT,
+                    LENGTH_LONG,
+                    LENGTH_LONG_LONG,
+                } length;
+                int is_const;
+                struct c_type *next;
+                size_t members;
+            } type;
+        } elems;
+        size_t len;
+    } vars;
+} frame;
 
 enum {
     ERR_INTERNAL,
@@ -246,6 +280,19 @@ int main(void) {
         ".code64\n"
         ".section \".text\"");
     
+    lex_next();
+    while (lexer.tok.type != TK_EOF) {
+        if (lexer.tok.type <= TK_VOID && lexer.tok.type >= TK_INT) {
+
+
+
+        } else if (lexer.tok.type == TK_SEMI) {
+            lex_next();
+        } else {
+            error(ERR_UNEXPECTED_TOKEN);
+        }
+    }
+
     puts(".section \".data\"");
     for (size_t i = 0; i < pool.constants.len; ++i) {
         printf("C@CONST_%zu:\n\t", i);
