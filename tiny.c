@@ -5,7 +5,7 @@
 #include <malloc.h>
 #include <string.h>
 
-char const * const TOKENS[] = {
+char const *const TOKENS[] = {
 	"int",
 	"char",
 	"float",
@@ -26,51 +26,60 @@ char const * const TOKENS[] = {
 	"*",
 };
 
-struct {
-	struct {
-		enum {
-			TK_INT, //0
-			TK_CHAR, // 1
-			TK_FLOAT, // 2
-			TK_VOID, // 3
-			TK_RETURN, // 4
-			TK_GOTO, // 5
-			TK_IF, // 6
-			TK_PAREN_L,//7
+struct
+{
+	struct
+	{
+		enum
+		{
+			TK_INT,		// 0
+			TK_CHAR,	// 1
+			TK_FLOAT,	// 2
+			TK_VOID,	// 3
+			TK_RETURN,	// 4
+			TK_GOTO,	// 5
+			TK_IF,		// 6
+			TK_PAREN_L, // 7
 			TK_PAREN_R, // 8
-			TK_BRACE_L,//9
-			TK_BRACE_R,//10
-			TK_BRACK_L,//11
-			TK_BRACK_R,//12
-			TK_SEMI,//13
-			TK_COLON, //14
-			TK_COMMA, //15
-			TK_PERIOD, //16
-			TK_STAR, // 17
+			TK_BRACE_L, // 9
+			TK_BRACE_R, // 10
+			TK_BRACK_L, // 11
+			TK_BRACK_R, // 12
+			TK_SEMI,	// 13
+			TK_COLON,	// 14
+			TK_COMMA,	// 15
+			TK_PERIOD,	// 16
+			TK_STAR,	// 17
 
-			TK_EOF,//18
-			TK_CONSTANT,//19
-			TK_IDENTIFIER,//20
-			} type;
+			TK_EOF,		   // 18
+			TK_CONSTANT,   // 19
+			TK_IDENTIFIER, // 20
+		} type;
 		size_t value;
 	} token;
 	char buffer[4096];
 	size_t line, col;
 } lexer = {0};
 
-struct {
-	struct {
+struct
+{
+	struct
+	{
 		char **elems;
 		size_t len;
 	} identifiers;
-	struct {
-		struct c_const {
-			enum {
+	struct
+	{
+		struct c_const
+		{
+			enum
+			{
 				C_CONST_INT,
 				C_CONST_FLOAT,
 				C_CONST_STRING,
 			} type;
-			union {
+			union
+			{
 				long long i;
 				long double f;
 				char const *s;
@@ -80,18 +89,24 @@ struct {
 	} constants;
 } pool = {0};
 
-struct frame {
-	struct {
-		struct c_var {
+struct frame
+{
+	struct
+	{
+		struct c_var
+		{
 			char const *name;
-			enum {
+			enum
+			{
 				C_VAR_TYPEDEF,
 				C_VAR_STATIC,
 				C_VAR_INLINE,
 				C_VAR_AUTO,
 			} storage;
-			struct c_type {
-				enum {
+			struct c_type
+			{
+				enum
+				{
 					C_TYPE_NONE,
 					C_TYPE_ERR,
 					C_TYPE_INT,
@@ -103,7 +118,8 @@ struct frame {
 					C_TYPE_VOID,
 				} type;
 				int sign;
-				enum {
+				enum
+				{
 					LENGTH_NONE,
 					LENGTH_SHORT,
 					LENGTH_LONG,
@@ -120,50 +136,59 @@ struct frame {
 	struct frame *previous;
 } frame;
 
-enum {
+enum
+{
 	ERR_INTERNAL,
 	ERR_LINE_TOO_LONG,
 	ERR_UNEXPECTED_TOKEN,
 };
 
-void error(int type) {
-	switch (type) {
-		case ERR_INTERNAL:
-			fprintf(stderr, "INTERNAL ERROR\n");
-			exit(EXIT_FAILURE);
-		case ERR_LINE_TOO_LONG:
-			fprintf(stderr, "ERROR: LINE %zu IS TOO LONG OR FILE DOES NOT END IN AN EMPTY LINE\n", lexer.line);
-			exit(EXIT_FAILURE);
-		case ERR_UNEXPECTED_TOKEN:
-			fprintf(stderr, "UNEXPECTED TOKEN AT LINE %zu COL %zu\n", lexer.line, lexer.col);
-			exit(EXIT_FAILURE);
+void error(int type)
+{
+	switch (type)
+	{
+	case ERR_INTERNAL:
+//		fprintf(stderr, ";INTERNAL ERROR\n");
+		exit(EXIT_FAILURE);
+	case ERR_LINE_TOO_LONG:
+//		fprintf(stderr, ";ERROR: LINE %zu IS TOO LONG OR FILE DOES NOT END IN AN EMPTY LINE\n", lexer.line);
+		exit(EXIT_FAILURE);
+	case ERR_UNEXPECTED_TOKEN:
+//		fprintf(stderr, ";UNEXPECTED TOKEN AT LINE %zu COL %zu\n", lexer.line, lexer.col);
+		exit(EXIT_FAILURE);
 	}
 }
 
-void lex_next(void) {
+void lex_next(void)
+{
 repeat:
-	if (!lexer.buffer[lexer.col]) {
-		if (!fgets(lexer.buffer, 4096, stdin)) {
-			puts("eof");
+	if (!lexer.buffer[lexer.col])
+	{
+		if (!fgets(lexer.buffer, 4096, stdin))
+		{
+//			puts(";eof");
 			lexer.token.type = TK_EOF;
 			return;
 		}
 		++lexer.line;
-		puts("eol");
-		if (lexer.buffer[strlen(lexer.buffer) - 1] != '\n') {
+//		puts(";eol");
+		if (lexer.buffer[strlen(lexer.buffer) - 1] != '\n')
+		{
 			error(ERR_LINE_TOO_LONG);
 		}
 		lexer.col = 0;
 	}
-	
-	if (isspace(lexer.buffer[lexer.col])) {
+
+	if (isspace(lexer.buffer[lexer.col]))
+	{
 		++lexer.col;
 		goto repeat;
 	}
 
-	printf("token starting at %s", lexer.buffer + lexer.col);
+//	printf(";token starting at %s", lexer.buffer + lexer.col);
 
-	if (lexer.buffer[lexer.col] == '"') {
+	if (lexer.buffer[lexer.col] == '"')
+	{
 		// puts("str");
 		// lex_next();
 
@@ -190,87 +215,106 @@ repeat:
 		// pool.constants.elems[lexer.token.value].type = C_CONST_STRING;
 
 		// return;
-		fprintf(stderr, "NO STRINGS!!!");
+//		fprintf(stderr, ";NO STRINGS!!!");
 		error(ERR_INTERNAL);
 	}
 
-	if (isdigit(lexer.buffer[lexer.col])) {
-		puts("num");
+	if (isdigit(lexer.buffer[lexer.col]))
+	{
+//		puts(";num");
 		struct c_const constant;
 		size_t ahead = lexer.col;
-		while (isdigit(++ahead));
+		while (isdigit(++ahead))
+			;
 		lexer.token.type = TK_CONSTANT;
 
-		if (lexer.buffer[ahead] == '.') {
+		if (lexer.buffer[ahead] == '.')
+		{
 			constant.type = C_CONST_FLOAT;
 			constant.value.f = strtod(lexer.buffer, NULL);
-			while (isalnum(lexer.buffer[++ahead]));
+			while (isalnum(lexer.buffer[++ahead]))
+				;
 		}
-		else {
+		else
+		{
 			constant.type = C_CONST_INT;
 			constant.value.i = strtol(lexer.buffer, NULL, 0);
 		}
-		
+
 		lexer.col = ahead;
 
-		for (lexer.token.value = 0; lexer.token.value < pool.constants.len; ++lexer.token.value) {
-			if (pool.constants.elems[lexer.token.value].type == constant.type) {
-				if (constant.type == C_CONST_FLOAT) {
-					if (constant.value.f == pool.constants.elems[lexer.token.value].value.f) {
+		for (lexer.token.value = 0; lexer.token.value < pool.constants.len; ++lexer.token.value)
+		{
+			if (pool.constants.elems[lexer.token.value].type == constant.type)
+			{
+				if (constant.type == C_CONST_FLOAT)
+				{
+					if (constant.value.f == pool.constants.elems[lexer.token.value].value.f)
+					{
 						return;
 					}
-				} else if (constant.type == C_CONST_INT) {
-					if (constant.value.i == pool.constants.elems[lexer.token.value].value.i) {
+				}
+				else if (constant.type == C_CONST_INT)
+				{
+					if (constant.value.i == pool.constants.elems[lexer.token.value].value.i)
+					{
 						return;
 					}
 				}
 			}
 		}
 
-		pool.constants.elems = realloc(pool.constants.elems, pool.constants.len * sizeof *pool.constants.elems);
+		pool.constants.elems = realloc(pool.constants.elems, ++pool.constants.len * sizeof *pool.constants.elems);
 
 		pool.constants.elems[lexer.token.value] = constant;
 
 		return;
 	}
 
-	for (lexer.token.type = 0; lexer.token.type < sizeof(TOKENS) / sizeof(*TOKENS); ++lexer.token.type) {
+	for (lexer.token.type = 0; lexer.token.type < sizeof(TOKENS) / sizeof(*TOKENS); ++lexer.token.type)
+	{
 		size_t len = strlen(TOKENS[lexer.token.type]);
 
-		if (memcmp(lexer.buffer + lexer.col, TOKENS[lexer.token.type], len)) {
+		if (memcmp(lexer.buffer + lexer.col, TOKENS[lexer.token.type], len))
+		{
 			continue;
 		}
 
-		if (isalnum(TOKENS[lexer.token.type][len - 1]) && isalnum(lexer.buffer[lexer.col + len])) {
+		if (isalnum(TOKENS[lexer.token.type][len - 1]) && isalnum(lexer.buffer[lexer.col + len]))
+		{
 			continue;
 		}
 
-		puts("token");
+//		puts(";token");
 		lexer.col += len;
 
 		return;
 	}
 
 	lexer.token.type = TK_IDENTIFIER;
-	for (lexer.token.value = 0; lexer.token.value < pool.identifiers.len; ++lexer.token.value) {
+	for (lexer.token.value = 0; lexer.token.value < pool.identifiers.len; ++lexer.token.value)
+	{
 		size_t len = strlen(pool.identifiers.elems[lexer.token.value]);
 
-		if (memcmp(lexer.buffer + lexer.col, pool.identifiers.elems[lexer.token.value], len)) {
+		if (memcmp(lexer.buffer + lexer.col, pool.identifiers.elems[lexer.token.value], len))
+		{
 			break;
 		}
-		if (isalnum(pool.identifiers.elems[lexer.token.value][len - 1])) {
+		if (isalnum(pool.identifiers.elems[lexer.token.value][len - 1]))
+		{
 			break;
 		}
 
-		puts("iden");
+//		puts(";iden");
 		return;
 	}
-	
-	puts("new iden");
+
+//	puts(";new iden");
 	pool.identifiers.elems = realloc(pool.identifiers.elems, ++pool.identifiers.len * sizeof *pool.identifiers.elems);
-	
+
 	size_t iden_len = 0;
-	while (isalnum(lexer.buffer[lexer.col + ++iden_len]));
+	while (isalnum(lexer.buffer[lexer.col + ++iden_len]))
+		;
 
 	pool.identifiers.elems[lexer.token.value] = malloc(iden_len + 1);
 
@@ -280,106 +324,198 @@ repeat:
 	lexer.col += iden_len;
 }
 
-void gen_decl(struct c_var* var) {
-	while (lexer.token.type <= TK_VOID && lexer.token.type >= TK_INT) {
-		switch (lexer.token.type) {
-			case TK_INT:
-				var->type.type = C_TYPE_INT;
-				break;
-			case TK_CHAR:
-				var->type.type = C_TYPE_CHAR;
-				break;
-			case TK_FLOAT:
-				var->type.type = C_TYPE_FLOAT;
-				break;
-			case TK_VOID:
-				var->type.type = C_TYPE_VOID;
-				break;
+void gen_expr(void) {
+	switch (lexer.token.type) {
+		case TK_RETURN:
+			lex_next();
+			gen_expr();
+			printf("\tret\n");
+			break;
+		case TK_GOTO:
+			// TODO frames
+			break;
+		case TK_BRACE_L:
+			break;
+		case TK_BRACK_L:
+			break;
+		case TK_PAREN_L:
+			break;
+		case TK_IF:
+			break;
+		case TK_STAR:
+			break;
+		case TK_IDENTIFIER: {
+
 		}
-		if (lexer.token.type == TK_STAR) {
+			break;
+		case TK_CONSTANT:
+			printf("\tmov %%rax, C@CONST_%zu\n", lexer.token.value);
+			lex_next();
+			break;
+	}
+}
+
+void gen_decl(struct c_var *var)
+{
+//	printf(";new decl\n");
+	while (lexer.token.type <= TK_VOID && lexer.token.type >= TK_INT)
+	{
+		switch (lexer.token.type)
+		{
+		case TK_INT:
+			var->type.type = C_TYPE_INT;
+			break;
+		case TK_CHAR:
+			var->type.type = C_TYPE_CHAR;
+			break;
+		case TK_FLOAT:
+			var->type.type = C_TYPE_FLOAT;
+			break;
+		case TK_VOID:
+			var->type.type = C_TYPE_VOID;
+			break;
+		}
+		lex_next();
+		if (lexer.token.type == TK_STAR)
+		{
 			var->type.next = calloc(1, sizeof *var->type.next);
 			*var->type.next = var->type;
 			var->type.type = C_TYPE_POINTER;
 		}
 	}
 	var->name = pool.identifiers.elems[lexer.token.value];
+//	printf(";new decl is named %s\n", var->name);
 	lex_next();
 
-	if (lexer.token.type == TK_PAREN_L) {
+	if (lexer.token.type == TK_PAREN_L)
+	{
+		struct
 		{
-			struct frame back = frame;
-			memset(&frame, 0, sizeof frame);
-			frame.previous = malloc(sizeof *frame.previous);
-			*frame.previous = back;
-		}
+			struct c_var *elems;
+			size_t len;
+		} params = {0};
+//		printf(";new decl is a function\n");
+		lex_next();
+		if (lexer.token.type != TK_PAREN_R)
+		{
+//			printf(";new decl is a function with params\n");
+			for (;;)
+			{
+				size_t idx = params.len++;
+				params.elems = realloc(params.elems, params.len * sizeof *params.elems);
+				gen_decl(params.elems + idx);
 
-		for (;;) {
-			size_t idx = frame.vars.len++;
-			frame.vars.elems = realloc(frame.vars.elems, frame.vars.len * sizeof *frame.vars.elems);
-			gen_decl(frame.vars.elems + idx);
-			// OH MY GOD
-			// I GET IT
-			if (lexer.token.type == TK_COMMA) {
-				lex_next();
-			} else if (lexer.token.type == TK_PAREN_R) {
-				break;
-			} else {
-				error(ERR_UNEXPECTED_TOKEN);
+				if (lexer.token.type == TK_COMMA)
+				{
+					lex_next();
+				}
+				else if (lexer.token.type == TK_PAREN_R)
+				{
+					break;
+				}
+				else
+				{
+					error(ERR_UNEXPECTED_TOKEN);
+				}
 			}
 		}
-		
-		if (lexer.token.type == TK_BRACE_L) {
-			if (frame.previous != NULL) {
+		lex_next();
+
+		if (lexer.token.type == TK_BRACE_L)
+		{
+			if (frame.previous != NULL)
+			{
 				error(ERR_UNEXPECTED_TOKEN);
 			}
+
+//			printf(";New decl function has a body!\n");
+			{
+				struct frame back = frame;
+				memset(&frame, 0, sizeof frame);
+				frame.previous = malloc(sizeof *frame.previous);
+				*frame.previous = back;
+			}
+
+			for (size_t i = 0; i < params.len; ++i)
+			{
+				size_t idx = frame.vars.len++;
+				frame.vars.elems = realloc(frame.vars.elems, frame.vars.len * sizeof *frame.vars.elems);
+				frame.vars.elems[idx] = params.elems[i];
+			}
+
+			// TODO enter frame
+			puts("\tpush %rbp\n"
+				 "\tmov %rbp, %rsp");
 
 			lex_next();
+			while (lexer.token.type <= TK_VOID && lexer.token.type >= TK_INT)
+			{
+				size_t idx = frame.vars.len++;
+				frame.vars.elems = realloc(frame.vars.elems, frame.vars.len * sizeof *frame.vars.elems);
 
-			while (lexer.token.type != TK_BRACE_R) {
-			size_t idx = frame.vars.len++;
-			frame.vars.elems = realloc(frame.vars.elems, frame.vars.len * sizeof *frame.vars.elems);
-			
-			gen_decl(frame.vars.elems + idx);
+				gen_decl(frame.vars.elems + idx);
 			}
+			while (lexer.token.type != TK_BRACE_R)
+			{
+				if (lexer.token.type == TK_SEMI)
+				{
+					lex_next();
+				}
+				else
+				{
+					gen_expr();
+				}
+			}
+			lex_next();
+			puts("\tpop %rbp\n"
+				 "\tret");
 		}
 	}
 }
 
-int main(void) {
+int main(void)
+{
 	frame.previous = NULL;
 
 	puts(
 		".code64\n"
 		".section \".text\"");
-	
+
 	lex_next();
-	while (lexer.token.type != TK_EOF) {
-		if (lexer.token.type <= TK_VOID && lexer.token.type >= TK_INT) {
+	while (lexer.token.type != TK_EOF)
+	{
+		if (lexer.token.type <= TK_VOID && lexer.token.type >= TK_INT)
+		{
 			size_t idx = frame.vars.len++;
 			frame.vars.elems = realloc(frame.vars.elems, frame.vars.len * sizeof *frame.vars.elems);
-			
-			gen_decl(frame.vars.elems + idx);
 
-		} else if (lexer.token.type == TK_SEMI) {
+			gen_decl(frame.vars.elems + idx);
+		}
+		else if (lexer.token.type == TK_SEMI)
+		{
 			lex_next();
-		} else {
+		}
+		else
+		{
 			error(ERR_UNEXPECTED_TOKEN);
 		}
 	}
 
 	puts(".section \".data\"");
-	for (size_t i = 0; i < pool.constants.len; ++i) {
+	for (size_t i = 0; i < pool.constants.len; ++i)
+	{
 		printf("C@CONST_%zu:\n\t", i);
-		switch (pool.constants.elems[i].type) {
-			case C_CONST_INT:
-				printf(".quad %lld", pool.constants.elems[i].value.i);
-				break;
-			case C_CONST_FLOAT:
-				printf(".double %LF", pool.constants.elems[i].value.f);
-				break;
-			case C_CONST_STRING:
-				printf(".asciz %s", pool.constants.elems[i].value.s);
-				break;
+		switch (pool.constants.elems[i].type)
+		{
+		case C_CONST_INT:
+			printf(".quad %lld", pool.constants.elems[i].value.i);
+			break;
+		case C_CONST_FLOAT:
+			printf(".double %LF", pool.constants.elems[i].value.f);
+			break;
+		case C_CONST_STRING:
+			printf(".asciz %s", pool.constants.elems[i].value.s);
+			break;
 		}
 		putchar('\n');
 	}
