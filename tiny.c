@@ -20,6 +20,9 @@ char const * const TOKENS[] = {
     "[",
     "]",
     ";",
+    ":",
+    ",",
+    ".",
 };
 
 struct {
@@ -39,10 +42,13 @@ struct {
             TK_BRACK_L,//11
             TK_BRACK_R,//12
             TK_SEMI,//13
+            TK_COLON, //14
+            TK_COMMA, //15
+            TK_PERIOD, //16
 
-            TK_EOF,//14
-            TK_CONSTANT,//15
-            TK_IDENTIFIER,//16
+            TK_EOF,//17
+            TK_CONSTANT,//18
+            TK_IDENTIFIER,//19
             } type;
         size_t value;
     } token;
@@ -63,10 +69,10 @@ struct {
                 C_CONST_STRING,
             } type;
             union {
-                int i;
-                float f;
+                long long i;
+                long double f;
                 char const *s;
-            } val;
+            } value;
         } *elems;
         size_t len;
     } constants;
@@ -116,6 +122,37 @@ repeat:
 
     printf("Tok starting at %s", lexer.buffer + lexer.col);
 
+    if (lexer.buffer[lexer.col] == '"') {
+        // puts("str");
+        // lex_next();
+
+        // for (lexer.token.value = 0; lexer.token.value < pool.constants.len; ++lexer.token.value) {
+        //     if (pool.constants.elems[lexer.token.value].type == C_CONST_STRING) {
+        //         size_t len = strlen(TOKENS[lexer.token.type]);
+
+        //         if (memcmp(lexer.buffer + lexer.col, TOKENS[lexer.token.type], len)) {
+        //             continue;
+        //         }
+
+        //         if (isalnum(TOKENS[lexer.token.type][len - 1]) && isalnum(lexer.buffer[lexer.col + len])) {
+        //             continue;
+        //         }
+
+        //         lexer.col += len;
+
+        //         return;
+        //     }
+        // }
+
+        // pool.constants.elems = realloc(pool.constants.elems, pool.constants.len * sizeof *pool.constants.elems);
+
+        // pool.constants.elems[lexer.token.value].type = C_CONST_STRING;
+
+        // return;
+        fprintf(stderr, "NO STRINGS!!!");
+        error(ERR_INTERNAL);
+    }
+
     if (isdigit(lexer.buffer[lexer.col])) {
         puts("num");
         struct c_const constant;
@@ -125,12 +162,12 @@ repeat:
 
         if (lexer.buffer[ahead] == '.') {
             constant.type = C_CONST_FLOAT;
-            constant.val.f = strtod(lexer.buffer, NULL);
+            constant.value.f = strtod(lexer.buffer, NULL);
             while (isalnum(lexer.buffer[++ahead]));
         }
         else {
             constant.type = C_CONST_INT;
-            constant.val.i = strtol(lexer.buffer, NULL, 0);
+            constant.value.i = strtol(lexer.buffer, NULL, 0);
         }
         
         lexer.col = ahead;
@@ -138,11 +175,11 @@ repeat:
         for (lexer.token.value = 0; lexer.token.value < pool.constants.len; ++lexer.token.value) {
             if (pool.constants.elems[lexer.token.value].type == constant.type) {
                 if (constant.type == C_CONST_FLOAT) {
-                    if (constant.val.f == pool.constants.elems[lexer.token.value].val.f) {
+                    if (constant.value.f == pool.constants.elems[lexer.token.value].value.f) {
                         return;
                     }
                 } else if (constant.type == C_CONST_INT) {
-                    if (constant.val.i == pool.constants.elems[lexer.token.value].val.i) {
+                    if (constant.value.i == pool.constants.elems[lexer.token.value].value.i) {
                         return;
                     }
                 }
@@ -202,10 +239,27 @@ repeat:
     lexer.col += iden_len;
 }
 
+
+
 int main(void) {
-    lex_next();
-    do {
-        printf("%d\n", lexer.token.type);
-        lex_next();
-    } while (lexer.token.type != TK_EOF);
+    puts(
+        ".code64\n"
+        ".section \".text\"");
+    
+    puts(".section \".data\"");
+    for (size_t i = 0; i < pool.constants.len; ++i) {
+        printf("C@CONST_%zu:\n\t", i);
+        switch (pool.constants.elems[i].type) {
+            case C_CONST_INT:
+                printf(".quad %lld", pool.constants.elems[i].value.i);
+                break;
+            case C_CONST_FLOAT:
+                printf(".double %LF", pool.constants.elems[i].value.f);
+                break;
+            case C_CONST_STRING:
+                printf(".asciz %s", pool.constants.elems[i].value.s);
+                break;
+        }
+        putchar('\n');
+    }
 }
