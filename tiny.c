@@ -41,7 +41,7 @@ struct {
         size_t len;
     } identifiers;
     struct {
-        struct {
+        struct c_const {
             enum {
                 C_CONST_INT,
                 C_CONST_FLOAT,
@@ -79,9 +79,9 @@ void error(int type) {
 }
 
 void lex_next(void) {
+repeat:
     if (!lexer.buffer[lexer.col]) {
         if (!fgets(lexer.buffer, 4096, stdin)) {
-repeat:
             lexer.token.type = TK_EOF;
             return;
         }
@@ -98,24 +98,55 @@ repeat:
     }
 
     if (isdigit(lexer.buffer[lexer.col])) {
+        struct c_const constant;
         size_t ahead = lexer.col;
         while (isdigit(++ahead));
         lexer.token.type = TK_CONSTANT;
 
-        // TODO
+        if (lexer.buffer[ahead] == '.') {
+            constant.type = C_CONST_FLOAT;
+            constant.val.f = strtod(lexer.buffer, NULL);
+            while (isalnum(lexer.buffer[++ahead]));
+        }
+        else {
+            constant.type = C_CONST_INT;
+            constant.val.i = strtol(lexer.buffer, NULL, 0);
+        }
         
+        lexer.col = ahead;
+
+        for (lexer.token.value = 0; lexer.token.value < pool.constants.len; ++lexer.token.value) {
+            if (pool.constants.elems[lexer.token.value].type != constant.type) {
+                continue;
+            }
+             
+            if (constant.type == C_CONST_FLOAT) {
+                if (constant.val.f == pool.constants.elems[lexer.token.value].val.f) {
+                    return;
+                }
+            } else if (constant.type == C_CONST_INT) {
+                if (constant.val.i == pool.constants.elems[lexer.token.value].val.i) {
+                    return;
+                }
+            }
+        }
+
+        pool.constants.elems = realloc(pool.constants.elems, pool.constants.len * sizeof *pool.constants.elems);
+
+        pool.constants.elems[lexer.token.value] = constant;
+
         return;
     }
 
-    for (lexer.token.type = 0; lexer.token.type < sizeof(TOKENS); ++lexer.token.type) {
+    for (lexer.token.type = 0; lexer.token.type < sizeof(TOKENS) / sizeof(*TOKENS); ++lexer.token.type) {
         size_t len = strlen(TOKENS[lexer.token.type]);
 
         if (memcmp(lexer.buffer + lexer.col, TOKENS[lexer.token.type], len)) {
-            break;
+            continue;
         }
 
         if (isalnum(*TOKENS[lexer.token.type]) && isalnum(TOKENS[lexer.token.type][len - 1])) {
-            break;
+            continue;
         } 
 
         return;
@@ -136,7 +167,7 @@ repeat:
         return;
     }
     
-    pool.identifiers.elems = realloc(pool.identifiers.elems, ++pool.identifiers.len);
+    pool.identifiers.elems = realloc(pool.identifiers.elems, ++pool.identifiers.len * sizeof *pool.identifiers.elems);
     
     size_t iden_len = 0;
     while (isalnum(lexer.buffer[lexer.col + ++iden_len]));
