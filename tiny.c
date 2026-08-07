@@ -349,7 +349,7 @@ void gen_expr(void) {
 		}
 			break;
 		case TK_CONSTANT:
-			printf("\tmov %%rax, C@CONST_%zu\n", lexer.token.value);
+			printf("\tmov %%rax, \"C@CONST_%zu\"\n", lexer.token.value);
 			lex_next();
 			break;
 	}
@@ -504,7 +504,7 @@ int main(void)
 	puts(".section \".data\"");
 	for (size_t i = 0; i < pool.constants.len; ++i)
 	{
-		printf("C@CONST_%zu:\n\t", i);
+		printf("\"C@CONST_%zu\":\n\t", i);
 		switch (pool.constants.elems[i].type)
 		{
 		case C_CONST_INT:
