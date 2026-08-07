@@ -23,6 +23,7 @@ char const * const TOKENS[] = {
     ":",
     ",",
     ".",
+    "*",
 };
 
 struct {
@@ -45,10 +46,11 @@ struct {
             TK_COLON, //14
             TK_COMMA, //15
             TK_PERIOD, //16
+            TK_STAR, // 17
 
-            TK_EOF,//17
-            TK_CONSTANT,//18
-            TK_IDENTIFIER,//19
+            TK_EOF,//18
+            TK_CONSTANT,//19
+            TK_IDENTIFIER,//20
             } type;
         size_t value;
     } token;
@@ -78,7 +80,7 @@ struct {
     } constants;
 } pool = {0};
 
-struct {
+struct frame {
     struct {
         struct c_var {
             enum {
@@ -96,6 +98,8 @@ struct {
                     C_TYPE_STRUC,
                     C_TYPE_ARRAY,
                     C_TYPE_POINTER,
+                    C_TYPE_CHAR,
+                    C_TYPE_VOID,
                 } type;
                 int sign;
                 enum {
@@ -111,6 +115,7 @@ struct {
         } elems;
         size_t len;
     } vars;
+    struct frame *previous;
 } frame;
 
 enum {
@@ -154,7 +159,7 @@ repeat:
         goto repeat;
     }
 
-    printf("Tok starting at %s", lexer.buffer + lexer.col);
+    printf("token starting at %s", lexer.buffer + lexer.col);
 
     if (lexer.buffer[lexer.col] == '"') {
         // puts("str");
@@ -238,7 +243,7 @@ repeat:
             continue;
         }
 
-        puts("tok");
+        puts("token");
         lexer.col += len;
 
         return;
@@ -273,20 +278,47 @@ repeat:
     lexer.col += iden_len;
 }
 
+void gen_decl(void) {
+    struct c_type type;
+    while (lexer.token.type <= TK_VOID && lexer.token.type >= TK_INT) {
+        switch (lexer.token.type) {
+            case TK_INT:
+                type.type = C_TYPE_INT;
+                break;
+            case TK_CHAR:
+                type.type = C_TYPE_CHAR;
+                break;
+            case TK_FLOAT:
+                type.type = C_TYPE_FLOAT;
+                break;
+            case TK_VOID:
+                type.type = C_TYPE_VOID;
+                break;
+        }
+        if (lexer.token.type == TK_STAR) {
+            type.next = calloc(1, sizeof *type.next);
+            *type.next = type;
+            type.type = C_TYPE_POINTER;
+        }
+    }
 
+    
+}
 
 int main(void) {
+    frame.previous = NULL;
+
     puts(
         ".code64\n"
         ".section \".text\"");
     
     lex_next();
-    while (lexer.tok.type != TK_EOF) {
-        if (lexer.tok.type <= TK_VOID && lexer.tok.type >= TK_INT) {
+    while (lexer.token.type != TK_EOF) {
+        if (lexer.token.type <= TK_VOID && lexer.token.type >= TK_INT) {
 
+        
 
-
-        } else if (lexer.tok.type == TK_SEMI) {
+        } else if (lexer.token.type == TK_SEMI) {
             lex_next();
         } else {
             error(ERR_UNEXPECTED_TOKEN);
