@@ -83,6 +83,7 @@ struct {
 struct frame {
     struct {
         struct c_var {
+            char const *name;
             enum {
                 C_VAR_TYPEDEF,
                 C_VAR_STATIC,
@@ -111,8 +112,9 @@ struct frame {
                 int is_const;
                 struct c_type *next;
                 size_t members;
+                // TODO params
             } type;
-        } elems;
+        } *elems;
         size_t len;
     } vars;
     struct frame *previous;
@@ -278,31 +280,46 @@ repeat:
     lexer.col += iden_len;
 }
 
-void gen_decl(void) {
-    struct c_type type;
+void gen_decl(struct c_var* var) {
     while (lexer.token.type <= TK_VOID && lexer.token.type >= TK_INT) {
         switch (lexer.token.type) {
             case TK_INT:
-                type.type = C_TYPE_INT;
+                var->type.type = C_TYPE_INT;
                 break;
             case TK_CHAR:
-                type.type = C_TYPE_CHAR;
+                var->type.type = C_TYPE_CHAR;
                 break;
             case TK_FLOAT:
-                type.type = C_TYPE_FLOAT;
+                var->type.type = C_TYPE_FLOAT;
                 break;
             case TK_VOID:
-                type.type = C_TYPE_VOID;
+                var->type.type = C_TYPE_VOID;
                 break;
         }
         if (lexer.token.type == TK_STAR) {
-            type.next = calloc(1, sizeof *type.next);
-            *type.next = type;
-            type.type = C_TYPE_POINTER;
+            var->type.next = calloc(1, sizeof *var->type.next);
+            *var->type.next = var->type;
+            var->type.type = C_TYPE_POINTER;
         }
     }
+    var->name = pool.identifiers.elems[lexer.token.value];
+    lex_next();
 
-    
+    if (lexer.token.type == TK_PAREN_L) {
+        {
+            struct frame back = frame;
+            memset(&frame, 0, sizeof frame);
+            frame.previous = malloc(sizeof *frame.previous);
+            *frame.previous = back;
+        }
+
+        while (lexer.token.type != TK_PAREN_R) {
+            size_t idx = frame.vars.len++;
+            frame.vars.elems = realloc(frame.vars.elems, frame.vars.len * sizeof *frame.vars.elems);
+            gen_decl(frame.vars.elems + idx);
+            
+        }
+    }
 }
 
 int main(void) {
