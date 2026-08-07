@@ -102,6 +102,7 @@ struct frame
 				C_VAR_STATIC,
 				C_VAR_INLINE,
 				C_VAR_AUTO,
+				C_VAR_REGISTER,
 			} storage;
 			struct c_type
 			{
@@ -128,6 +129,7 @@ struct frame
 				int is_const;
 				struct c_type *next;
 				size_t members;
+				size_t offset;
 				// TODO params
 			} type;
 		} *elems;
@@ -135,6 +137,7 @@ struct frame
 	} vars;
 	struct frame *previous;
 } frame;
+
 
 enum
 {
@@ -148,13 +151,13 @@ void error(int type)
 	switch (type)
 	{
 	case ERR_INTERNAL:
-//		fprintf(stderr, ";INTERNAL ERROR\n");
+		//		fprintf(stderr, ";INTERNAL ERROR\n");
 		exit(EXIT_FAILURE);
 	case ERR_LINE_TOO_LONG:
-//		fprintf(stderr, ";ERROR: LINE %zu IS TOO LONG OR FILE DOES NOT END IN AN EMPTY LINE\n", lexer.line);
+		//		fprintf(stderr, ";ERROR: LINE %zu IS TOO LONG OR FILE DOES NOT END IN AN EMPTY LINE\n", lexer.line);
 		exit(EXIT_FAILURE);
 	case ERR_UNEXPECTED_TOKEN:
-//		fprintf(stderr, ";UNEXPECTED TOKEN AT LINE %zu COL %zu\n", lexer.line, lexer.col);
+		//		fprintf(stderr, ";UNEXPECTED TOKEN AT LINE %zu COL %zu\n", lexer.line, lexer.col);
 		exit(EXIT_FAILURE);
 	}
 }
@@ -166,12 +169,12 @@ repeat:
 	{
 		if (!fgets(lexer.buffer, 4096, stdin))
 		{
-//			puts(";eof");
+			//			puts(";eof");
 			lexer.token.type = TK_EOF;
 			return;
 		}
 		++lexer.line;
-//		puts(";eol");
+		//		puts(";eol");
 		if (lexer.buffer[strlen(lexer.buffer) - 1] != '\n')
 		{
 			error(ERR_LINE_TOO_LONG);
@@ -185,7 +188,7 @@ repeat:
 		goto repeat;
 	}
 
-//	printf(";token starting at %s", lexer.buffer + lexer.col);
+	//	printf(";token starting at %s", lexer.buffer + lexer.col);
 
 	if (lexer.buffer[lexer.col] == '"')
 	{
@@ -215,13 +218,13 @@ repeat:
 		// pool.constants.elems[lexer.token.value].type = C_CONST_STRING;
 
 		// return;
-//		fprintf(stderr, ";NO STRINGS!!!");
+		//		fprintf(stderr, ";NO STRINGS!!!");
 		error(ERR_INTERNAL);
 	}
 
 	if (isdigit(lexer.buffer[lexer.col]))
 	{
-//		puts(";num");
+		//		puts(";num");
 		struct c_const constant;
 		size_t ahead = lexer.col;
 		while (isdigit(++ahead))
@@ -285,7 +288,7 @@ repeat:
 			continue;
 		}
 
-//		puts(";token");
+		//		puts(";token");
 		lexer.col += len;
 
 		return;
@@ -305,11 +308,11 @@ repeat:
 			break;
 		}
 
-//		puts(";iden");
+		//		puts(";iden");
 		return;
 	}
 
-//	puts(";new iden");
+	//	puts(";new iden");
 	pool.identifiers.elems = realloc(pool.identifiers.elems, ++pool.identifiers.len * sizeof *pool.identifiers.elems);
 
 	size_t iden_len = 0;
@@ -324,40 +327,65 @@ repeat:
 	lexer.col += iden_len;
 }
 
-void gen_expr(void) {
-	switch (lexer.token.type) {
-		case TK_RETURN:
-			lex_next();
-			gen_expr();
-			printf("\tret\n");
-			break;
-		case TK_GOTO:
-			// TODO frames
-			break;
-		case TK_BRACE_L:
-			break;
-		case TK_BRACK_L:
-			break;
-		case TK_PAREN_L:
-			break;
-		case TK_IF:
-			break;
-		case TK_STAR:
-			break;
-		case TK_IDENTIFIER: {
-
+struct c_var* find_var_rec(char *name, struct frame *frame)
+{
+	for (size_t i = 0; i < frame->vars.len; ++i)
+	{
+		if (!strcmp(name, frame->vars.elems[i].name))
+		{
+			return frame->vars.elems + i;
 		}
-			break;
-		case TK_CONSTANT:
-			printf("\tmov %%rax, \"C@CONST_%zu\"\n", lexer.token.value);
-			lex_next();
-			break;
+	}
+	if (frame->previous)
+	{
+		return find_var_rec(name, frame->previous);
+	}
+}
+
+struct c_var* find_var(char *name)
+{
+	return find_var_rec(name, &frame);
+}
+
+void gen_expr(void)
+{
+	switch (lexer.token.type)
+	{
+	case TK_RETURN:
+		lex_next();
+		gen_expr();
+		printf("\tpop %%rbp\n"
+			   "\tret\n");
+		break;
+	case TK_GOTO:
+		// TODO frames
+		break;
+	case TK_BRACE_L:
+		break;
+	case TK_BRACK_L:
+		break;
+	case TK_PAREN_L:
+		break;
+	case TK_IF:
+		break;
+	case TK_STAR:
+		break;
+	case TK_IDENTIFIER:
+	{
+		struct c_var* var = find_var(pool.identifiers.elems[lexer.token.value]);
+		lex_next();
+	}
+	break;
+	case TK_CONSTANT:
+		printf("\tmov %%rax, \"C@CONST_%zu\"\n", lexer.token.value);
+		lex_next();
+		break;
 	}
 }
 
 void gen_decl(struct c_var *var)
 {
-//	printf(";new decl\n");
+	//	printf(";new decl\n");
 	while (lexer.token.type <= TK_VOID && lexer.token.type >= TK_INT)
 	{
 		switch (lexer.token.type)
@@ -384,7 +412,7 @@ void gen_decl(struct c_var *var)
 		}
 	}
 	var->name = pool.identifiers.elems[lexer.token.value];
-//	printf(";new decl is named %s\n", var->name);
+	//	printf(";new decl is named %s\n", var->name);
 	lex_next();
 
 	if (lexer.token.type == TK_PAREN_L)
@@ -394,11 +422,11 @@ void gen_decl(struct c_var *var)
 			struct c_var *elems;
 			size_t len;
 		} params = {0};
-//		printf(";new decl is a function\n");
+		//		printf(";new decl is a function\n");
 		lex_next();
 		if (lexer.token.type != TK_PAREN_R)
 		{
-//			printf(";new decl is a function with params\n");
+			//			printf(";new decl is a function with params\n");
 			for (;;)
 			{
 				size_t idx = params.len++;
@@ -420,7 +448,7 @@ void gen_decl(struct c_var *var)
 			}
 		}
 		lex_next();
-
+		printf("%s:\n", var->name);
 		if (lexer.token.type == TK_BRACE_L)
 		{
 			if (frame.previous != NULL)
@@ -428,7 +456,7 @@ void gen_decl(struct c_var *var)
 				error(ERR_UNEXPECTED_TOKEN);
 			}
 
-//			printf(";New decl function has a body!\n");
+			//			printf(";New decl function has a body!\n");
 			{
 				struct frame back = frame;
 				memset(&frame, 0, sizeof frame);
@@ -443,18 +471,24 @@ void gen_decl(struct c_var *var)
 				frame.vars.elems[idx] = params.elems[i];
 			}
 
-			// TODO enter frame
-			puts("\tpush %rbp\n"
-				 "\tmov %rbp, %rsp");
 
 			lex_next();
-			while (lexer.token.type <= TK_VOID && lexer.token.type >= TK_INT)
-			{
-				size_t idx = frame.vars.len++;
-				frame.vars.elems = realloc(frame.vars.elems, frame.vars.len * sizeof *frame.vars.elems);
 
-				gen_decl(frame.vars.elems + idx);
+			{
+				size_t stackoff = 0;
+				while (lexer.token.type <= TK_VOID && lexer.token.type >= TK_INT)
+				{
+					size_t idx = frame.vars.len++;
+					frame.vars.elems = realloc(frame.vars.elems, frame.vars.len * sizeof *frame.vars.elems);
+					gen_decl(frame.vars.elems + idx);
+					stackoff += 8; // TODO chagne this to come from the decl
+				}
+				printf("\tsub %%rsp, %zu\n", stackoff);
 			}
+
+			puts("\tpush %rbp\n"
+				 "\tmov %rbp, %rsp");
+			
 			while (lexer.token.type != TK_BRACE_R)
 			{
 				if (lexer.token.type == TK_SEMI)
