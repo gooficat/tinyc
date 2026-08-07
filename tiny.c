@@ -13,22 +13,37 @@ char const * const TOKENS[] = {
     "return",
     "goto",
     "if",
+    "(",
+    ")",
+    "{",
+    "}",
+    "[",
+    "]",
+    ";",
 };
 
 struct {
     struct {
         enum {
-            TK_INT,
-            TK_CHAR,
-            TK_FLOAT,
-            TK_VOID,
-            TK_RETURN,
-            TK_GOTO,
-            TK_IF,
-            TK_EOF,
-            TK_CONSTANT,
-            TK_IDENTIFIER,
-        } type;
+            TK_INT, //0
+            TK_CHAR, // 1
+            TK_FLOAT, // 2
+            TK_VOID, // 3
+            TK_RETURN, // 4
+            TK_GOTO, // 5
+            TK_IF, // 6
+            TK_PAREN_L,//7
+            TK_PAREN_R, // 8
+            TK_BRACE_L,//9
+            TK_BRACE_R,//10
+            TK_BRACK_L,//11
+            TK_BRACK_R,//12
+            TK_SEMI,//13
+
+            TK_EOF,//14
+            TK_CONSTANT,//15
+            TK_IDENTIFIER,//16
+            } type;
         size_t value;
     } token;
     char buffer[4096];
@@ -70,7 +85,7 @@ void error(int type) {
             fprintf(stderr, "INTERNAL ERROR\n");
             exit(EXIT_FAILURE);
         case ERR_LINE_TOO_LONG:
-            fprintf(stderr, "ERROR: LINE %zu IS TOO LONG\n", lexer.line);
+            fprintf(stderr, "ERROR: LINE %zu IS TOO LONG OR FILE DOES NOT END IN AN EMPTY LINE\n", lexer.line);
             exit(EXIT_FAILURE);
         case ERR_UNEXPECTED_TOKEN:
             fprintf(stderr, "UNEXPECTED TOKEN AT LINE %zu COL %zu\n", lexer.line, lexer.col);
@@ -82,13 +97,15 @@ void lex_next(void) {
 repeat:
     if (!lexer.buffer[lexer.col]) {
         if (!fgets(lexer.buffer, 4096, stdin)) {
+            puts("eof");
             lexer.token.type = TK_EOF;
             return;
         }
+        ++lexer.line;
+        puts("eol");
         if (lexer.buffer[strlen(lexer.buffer) - 1] != '\n') {
             error(ERR_LINE_TOO_LONG);
         }
-        ++lexer.line;
         lexer.col = 0;
     }
     
@@ -97,7 +114,10 @@ repeat:
         goto repeat;
     }
 
+    printf("Tok starting at %s", lexer.buffer + lexer.col);
+
     if (isdigit(lexer.buffer[lexer.col])) {
+        puts("num");
         struct c_const constant;
         size_t ahead = lexer.col;
         while (isdigit(++ahead));
@@ -116,17 +136,15 @@ repeat:
         lexer.col = ahead;
 
         for (lexer.token.value = 0; lexer.token.value < pool.constants.len; ++lexer.token.value) {
-            if (pool.constants.elems[lexer.token.value].type != constant.type) {
-                continue;
-            }
-             
-            if (constant.type == C_CONST_FLOAT) {
-                if (constant.val.f == pool.constants.elems[lexer.token.value].val.f) {
-                    return;
-                }
-            } else if (constant.type == C_CONST_INT) {
-                if (constant.val.i == pool.constants.elems[lexer.token.value].val.i) {
-                    return;
+            if (pool.constants.elems[lexer.token.value].type == constant.type) {
+                if (constant.type == C_CONST_FLOAT) {
+                    if (constant.val.f == pool.constants.elems[lexer.token.value].val.f) {
+                        return;
+                    }
+                } else if (constant.type == C_CONST_INT) {
+                    if (constant.val.i == pool.constants.elems[lexer.token.value].val.i) {
+                        return;
+                    }
                 }
             }
         }
@@ -145,9 +163,12 @@ repeat:
             continue;
         }
 
-        if (isalnum(*TOKENS[lexer.token.type]) && isalnum(TOKENS[lexer.token.type][len - 1])) {
+        if (isalnum(TOKENS[lexer.token.type][len - 1]) && isalnum(lexer.buffer[lexer.col + len])) {
             continue;
-        } 
+        }
+
+        puts("tok");
+        lexer.col += len;
 
         return;
     }
@@ -159,14 +180,15 @@ repeat:
         if (memcmp(lexer.buffer + lexer.col, pool.identifiers.elems[lexer.token.value], len)) {
             break;
         }
-
         if (isalnum(pool.identifiers.elems[lexer.token.value][len - 1])) {
             break;
         }
 
+        puts("iden");
         return;
     }
     
+    puts("new iden");
     pool.identifiers.elems = realloc(pool.identifiers.elems, ++pool.identifiers.len * sizeof *pool.identifiers.elems);
     
     size_t iden_len = 0;
@@ -181,8 +203,9 @@ repeat:
 }
 
 int main(void) {
+    lex_next();
     do {
-        lex_next();
         printf("%d\n", lexer.token.type);
+        lex_next();
     } while (lexer.token.type != TK_EOF);
 }
