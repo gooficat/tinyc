@@ -1,6 +1,8 @@
+int fo;
+
 int main() {
     int a;
     int b;
-    a;
+    a = 0;
     return 0;
 }

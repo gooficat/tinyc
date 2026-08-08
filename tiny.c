@@ -10,6 +10,7 @@ char const *const TOKENS[] = {
 	"char",
 	"float",
 	"void",
+	"static",
 	"return",
 	"goto",
 	"if",
@@ -33,28 +34,29 @@ struct
 	{
 		enum
 		{
-			TK_INT,		   // 0
-			TK_CHAR,	   // 1
-			TK_FLOAT,	   // 2
-			TK_VOID,	   // 3
-			TK_RETURN,	   // 4
-			TK_GOTO,	   // 5
-			TK_IF,		   // 6
-			TK_PAREN_L,	   // 7
-			TK_PAREN_R,	   // 8
-			TK_BRACE_L,	   // 9
-			TK_BRACE_R,	   // 10
-			TK_BRACK_L,	   // 11
-			TK_BRACK_R,	   // 12
-			TK_SEMI,	   // 13
-			TK_COLON,	   // 14
-			TK_COMMA,	   // 15
-			TK_PERIOD,	   // 16
-			TK_STAR,	   // 17
-			TK_EQU,		   // 29
-			TK_EOF,		   // 18
-			TK_CONSTANT,   // 19
-			TK_IDENTIFIER, // 20
+			TK_INT,
+			TK_CHAR,
+			TK_FLOAT,
+			TK_VOID,
+			TK_STATIC,
+			TK_RETURN,
+			TK_GOTO,
+			TK_IF,
+			TK_PAREN_L,
+			TK_PAREN_R,
+			TK_BRACE_L,
+			TK_BRACE_R,
+			TK_BRACK_L,
+			TK_BRACK_R,
+			TK_SEMI,
+			TK_COLON,
+			TK_COMMA,
+			TK_PERIOD,
+			TK_STAR,
+			TK_EQU,
+			TK_EOF,
+			TK_CONSTANT,
+			TK_IDENTIFIER,
 		} type;
 		size_t value;
 	} token;
@@ -148,18 +150,24 @@ enum
 	ERR_UNEXPECTED_TOKEN,
 };
 
+size_t disamBIG(void)
+{
+	static size_t ctr = 0;
+	return ctr++;
+}
+
 void error(int type)
 {
 	switch (type)
 	{
 	case ERR_INTERNAL:
-		//		fprintf(stderr, ";INTERNAL ERROR\n");
+		fprintf(stderr, ";INTERNAL ERROR\n");
 		exit(EXIT_FAILURE);
 	case ERR_LINE_TOO_LONG:
-		//		fprintf(stderr, ";ERROR: LINE %zu IS TOO LONG OR FILE DOES NOT END IN AN EMPTY LINE\n", lexer.line);
+		fprintf(stderr, ";ERROR: LINE %zu IS TOO LONG OR FILE DOES NOT END IN AN EMPTY LINE\n", lexer.line);
 		exit(EXIT_FAILURE);
 	case ERR_UNEXPECTED_TOKEN:
-		//		fprintf(stderr, ";UNEXPECTED TOKEN AT LINE %zu COL %zu\n", lexer.line, lexer.col);
+		fprintf(stderr, ";UNEXPECTED TOKEN OF TYPE %d AT LINE %zu COL %zu\n", lexer.token.type, lexer.line, lexer.col);
 		exit(EXIT_FAILURE);
 	}
 }
@@ -342,6 +350,7 @@ struct c_var *find_var_rec(char *name, struct frame *frame)
 	{
 		return find_var_rec(name, frame->previous);
 	}
+	return NULL;
 }
 
 struct c_var *find_var(char *name)
@@ -351,7 +360,7 @@ struct c_var *find_var(char *name)
 
 void gen_expr(void)
 {
-	switch (lexer.token.type)
+	switch ((int)lexer.token.type)
 	{
 	case TK_RETURN:
 		lex_next();
@@ -385,31 +394,36 @@ void gen_expr(void)
 			lex_next();
 			gen_expr();
 			printf("\tmov ");
-			switch (var->storage)
+			switch ((int)var->storage)
 			{
-				case C_VAR_AUTO:
-					printf("-%zu(%%rbp)", var->offset);
-					break;
-				case C_VAR_STATIC:
-					printf("\"%s\"", var->name);
-					break;
+			case C_VAR_AUTO:
+				printf("-%zu(%%rbp)", var->offset);
+				break;
+			case C_VAR_STATIC:
+				printf("\"%s\"", var->name);
+				break;
 				// case C_VAR_REGISTER:
 			}
-			printf(", %%eax\n");
-		} else if (lexer.token.type == TK_PAREN_L) {
+			// TODO big stuff
+			printf(", %%rax\n");
+		}
+		else if (lexer.token.type == TK_PAREN_L)
+		{
 			lex_next();
 			// TODO
 			error(ERR_INTERNAL);
-		} else {
+		}
+		else
+		{
 			printf("\tmov %%rax, ");
-			switch (var->storage)
+			switch ((int)var->storage)
 			{
-				case C_VAR_AUTO:
-					printf("-%zu(%%rbp)", var->offset);
-					break;
-				case C_VAR_STATIC:
-					printf("\"%s\"(%%rip)", var->name);
-					break;
+			case C_VAR_AUTO:
+				printf("-%zu(%%rbp)", var->offset);
+				break;
+			case C_VAR_STATIC:
+				printf("\"C@STAT_%zu\"(%%rip)", var->offset);
+				break;
 				// case C_VAR_REGISTER:
 			}
 			putchar('\n');
@@ -417,7 +431,7 @@ void gen_expr(void)
 	}
 	break;
 	case TK_CONSTANT:
-		printf("\tmov %%rax, \"C@CONST_%zu\"\n", lexer.token.value);
+		printf("\tmov %%rax, \"C@CONST_%zu\"(%%rip)\n", lexer.token.value);
 		lex_next();
 		break;
 	}
@@ -428,7 +442,7 @@ void gen_decl(struct c_var *var)
 	//	printf(";new decl\n");
 	while (lexer.token.type <= TK_VOID && lexer.token.type >= TK_INT)
 	{
-		switch (lexer.token.type)
+		switch ((int)lexer.token.type)
 		{
 		case TK_INT:
 			var->type.type = C_TYPE_INT;
@@ -471,18 +485,18 @@ void gen_decl(struct c_var *var)
 		lex_next();
 		if (lexer.token.type != TK_PAREN_R)
 		{
-			//			printf(";new decl is a function with params\n");
+			//	printf(";new decl is a function with params\n");
 			for (;;)
 			{
 				size_t idx = params.len++;
 				params.elems = realloc(params.elems, params.len * sizeof *params.elems);
 				gen_decl(params.elems + idx);
-				
-				if (params.elems[idx].storage == C_VAR_AUTO) {
+
+				if (params.elems[idx].storage == C_VAR_AUTO)
+				{
 					params.elems[idx].offset = frame.total_offset;
 					frame.total_offset += params.elems[idx].type.size_of;
 				}
-
 
 				if (lexer.token.type == TK_COMMA)
 				{
@@ -532,7 +546,8 @@ void gen_decl(struct c_var *var)
 					frame.vars.elems = realloc(frame.vars.elems, frame.vars.len * sizeof *frame.vars.elems);
 					gen_decl(frame.vars.elems + idx);
 
-					if (frame.vars.elems[idx].storage == C_VAR_AUTO) {
+					if (frame.vars.elems[idx].storage == C_VAR_AUTO)
+					{
 						frame.vars.elems[idx].offset = frame.total_offset;
 						frame.total_offset += frame.vars.elems[idx].type.size_of; // TODO fix this gibberish
 						stackoff += frame.vars.elems[idx].type.size_of;
@@ -558,18 +573,44 @@ void gen_decl(struct c_var *var)
 			lex_next();
 			puts("\tpop %rbp\n"
 				 "\tret");
+			{
+				for (size_t i = 0; i < frame.vars.len; ++i)
+				{
+					if (frame.vars.elems[i].storage == C_VAR_STATIC)
+					{
+						printf("\"C@STAT_%zu\":\n"
+							   "\t.space %zu\n",
+							   frame.vars.elems[i].offset,
+							   frame.vars.elems[i].type.size_of);
+					}
+				}
+
+				struct frame previous = *frame.previous;
+				free(frame.previous);
+				free(frame.vars.elems);
+				frame = previous;
+			}
 		}
 	}
-	else {
-		if (frame.previous != NULL) {
+	else
+	{
+		if (frame.previous != NULL)
+		{
 			var->storage = C_VAR_AUTO;
-		} else {
+		}
+		else
+		{
 			var->storage = C_VAR_STATIC;
+			printf("\"%s\":\n", var->name);
+			printf("\t.space %zu\n", var->type.size_of);
 		}
 	}
-	if (lexer.token.type == TK_SEMI) {
+	if (lexer.token.type == TK_SEMI)
+	{
 		lex_next();
-	} else if (lexer.token.type == TK_COMMA) {
+	}
+	else if (lexer.token.type == TK_COMMA)
+	{
 		// TODO
 		error(ERR_INTERNAL);
 	}
@@ -603,7 +644,7 @@ int main(void)
 		}
 	}
 
-	puts(".section \".data\"");
+	puts(".section \".rodata\"");
 	for (size_t i = 0; i < pool.constants.len; ++i)
 	{
 		printf("\"C@CONST_%zu\":\n\t", i);
