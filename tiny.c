@@ -24,6 +24,7 @@ char const *const TOKENS[] = {
 	",",
 	".",
 	"*",
+	"=",
 };
 
 struct
@@ -32,25 +33,25 @@ struct
 	{
 		enum
 		{
-			TK_INT,		// 0
-			TK_CHAR,	// 1
-			TK_FLOAT,	// 2
-			TK_VOID,	// 3
-			TK_RETURN,	// 4
-			TK_GOTO,	// 5
-			TK_IF,		// 6
-			TK_PAREN_L, // 7
-			TK_PAREN_R, // 8
-			TK_BRACE_L, // 9
-			TK_BRACE_R, // 10
-			TK_BRACK_L, // 11
-			TK_BRACK_R, // 12
-			TK_SEMI,	// 13
-			TK_COLON,	// 14
-			TK_COMMA,	// 15
-			TK_PERIOD,	// 16
-			TK_STAR,	// 17
-
+			TK_INT,		   // 0
+			TK_CHAR,	   // 1
+			TK_FLOAT,	   // 2
+			TK_VOID,	   // 3
+			TK_RETURN,	   // 4
+			TK_GOTO,	   // 5
+			TK_IF,		   // 6
+			TK_PAREN_L,	   // 7
+			TK_PAREN_R,	   // 8
+			TK_BRACE_L,	   // 9
+			TK_BRACE_R,	   // 10
+			TK_BRACK_L,	   // 11
+			TK_BRACK_R,	   // 12
+			TK_SEMI,	   // 13
+			TK_COLON,	   // 14
+			TK_COMMA,	   // 15
+			TK_PERIOD,	   // 16
+			TK_STAR,	   // 17
+			TK_EQU,		   // 29
 			TK_EOF,		   // 18
 			TK_CONSTANT,   // 19
 			TK_IDENTIFIER, // 20
@@ -129,15 +130,16 @@ struct frame
 				int is_const;
 				struct c_type *next;
 				size_t members;
-				size_t offset;
+				size_t size_of;
 				// TODO params
 			} type;
+			size_t offset;
 		} *elems;
 		size_t len;
 	} vars;
+	size_t total_offset;
 	struct frame *previous;
 } frame;
-
 
 enum
 {
@@ -327,7 +329,7 @@ repeat:
 	lexer.col += iden_len;
 }
 
-struct c_var* find_var_rec(char *name, struct frame *frame)
+struct c_var *find_var_rec(char *name, struct frame *frame)
 {
 	for (size_t i = 0; i < frame->vars.len; ++i)
 	{
@@ -342,7 +344,7 @@ struct c_var* find_var_rec(char *name, struct frame *frame)
 	}
 }
 
-struct c_var* find_var(char *name)
+struct c_var *find_var(char *name)
 {
 	return find_var_rec(name, &frame);
 }
@@ -372,8 +374,46 @@ void gen_expr(void)
 		break;
 	case TK_IDENTIFIER:
 	{
-		struct c_var* var = find_var(pool.identifiers.elems[lexer.token.value]);
+		struct c_var *var = find_var(pool.identifiers.elems[lexer.token.value]);
 		lex_next();
+		if (var->storage == C_VAR_TYPEDEF)
+		{
+			error(ERR_INTERNAL);
+		}
+		else if (lexer.token.type == TK_EQU)
+		{
+			lex_next();
+			gen_expr();
+			printf("\tmov ");
+			switch (var->storage)
+			{
+				case C_VAR_AUTO:
+					printf("-%zu(%%rbp)", var->offset);
+					break;
+				case C_VAR_STATIC:
+					printf("\"%s\"", var->name);
+					break;
+				// case C_VAR_REGISTER:
+			}
+			printf(", %%eax\n");
+		} else if (lexer.token.type == TK_PAREN_L) {
+			lex_next();
+			// TODO
+			error(ERR_INTERNAL);
+		} else {
+			printf("\tmov %%rax, ");
+			switch (var->storage)
+			{
+				case C_VAR_AUTO:
+					printf("-%zu(%%rbp)", var->offset);
+					break;
+				case C_VAR_STATIC:
+					printf("\"%s\"(%%rip)", var->name);
+					break;
+				// case C_VAR_REGISTER:
+			}
+			putchar('\n');
+		}
 	}
 	break;
 	case TK_CONSTANT:
@@ -392,15 +432,19 @@ void gen_decl(struct c_var *var)
 		{
 		case TK_INT:
 			var->type.type = C_TYPE_INT;
+			var->type.size_of = 8;
 			break;
 		case TK_CHAR:
 			var->type.type = C_TYPE_CHAR;
+			var->type.size_of = 1;
 			break;
 		case TK_FLOAT:
 			var->type.type = C_TYPE_FLOAT;
+			var->type.size_of = 8;
 			break;
 		case TK_VOID:
 			var->type.type = C_TYPE_VOID;
+			var->type.size_of = 0;
 			break;
 		}
 		lex_next();
@@ -417,6 +461,7 @@ void gen_decl(struct c_var *var)
 
 	if (lexer.token.type == TK_PAREN_L)
 	{
+		var->storage = C_VAR_STATIC;
 		struct
 		{
 			struct c_var *elems;
@@ -432,6 +477,12 @@ void gen_decl(struct c_var *var)
 				size_t idx = params.len++;
 				params.elems = realloc(params.elems, params.len * sizeof *params.elems);
 				gen_decl(params.elems + idx);
+				
+				if (params.elems[idx].storage == C_VAR_AUTO) {
+					params.elems[idx].offset = frame.total_offset;
+					frame.total_offset += params.elems[idx].type.size_of;
+				}
+
 
 				if (lexer.token.type == TK_COMMA)
 				{
@@ -448,7 +499,7 @@ void gen_decl(struct c_var *var)
 			}
 		}
 		lex_next();
-		printf("%s:\n", var->name);
+		printf("\"%s\":\n", var->name);
 		if (lexer.token.type == TK_BRACE_L)
 		{
 			if (frame.previous != NULL)
@@ -471,7 +522,6 @@ void gen_decl(struct c_var *var)
 				frame.vars.elems[idx] = params.elems[i];
 			}
 
-
 			lex_next();
 
 			{
@@ -481,14 +531,19 @@ void gen_decl(struct c_var *var)
 					size_t idx = frame.vars.len++;
 					frame.vars.elems = realloc(frame.vars.elems, frame.vars.len * sizeof *frame.vars.elems);
 					gen_decl(frame.vars.elems + idx);
-					stackoff += 8; // TODO chagne this to come from the decl
+
+					if (frame.vars.elems[idx].storage == C_VAR_AUTO) {
+						frame.vars.elems[idx].offset = frame.total_offset;
+						frame.total_offset += frame.vars.elems[idx].type.size_of; // TODO fix this gibberish
+						stackoff += frame.vars.elems[idx].type.size_of;
+					}
 				}
 				printf("\tsub %%rsp, %zu\n", stackoff);
 			}
 
 			puts("\tpush %rbp\n"
 				 "\tmov %rbp, %rsp");
-			
+
 			while (lexer.token.type != TK_BRACE_R)
 			{
 				if (lexer.token.type == TK_SEMI)
@@ -504,6 +559,19 @@ void gen_decl(struct c_var *var)
 			puts("\tpop %rbp\n"
 				 "\tret");
 		}
+	}
+	else {
+		if (frame.previous != NULL) {
+			var->storage = C_VAR_AUTO;
+		} else {
+			var->storage = C_VAR_STATIC;
+		}
+	}
+	if (lexer.token.type == TK_SEMI) {
+		lex_next();
+	} else if (lexer.token.type == TK_COMMA) {
+		// TODO
+		error(ERR_INTERNAL);
 	}
 }
 
