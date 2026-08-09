@@ -115,6 +115,12 @@ struct frame
 				C_VAR_AUTO,
 				C_VAR_REGISTER,
 			} storage;
+			enum
+			{
+				C_LINK_EXTERN,
+				C_LINK_STATIC,
+				C_LINK_NONE,
+			} linkage;
 			struct c_type
 			{
 				enum
@@ -628,7 +634,7 @@ void gen_decl(struct c_var *var)
 		}
 		else
 		{
-			var->storage = C_VAR_STATIC; // WRONG! SHOULD BE EXTERN AND HAVE A CHECK IF ITS ARLEADY SET
+			var->storage = C_VAR_STATIC; // TODO CHECK IF ARLEADY SET. ALSO ADD LINKAGE
 			printf(".globl \"%s\"\n", var->name);
 			printf("\"%s\":\n", var->name);
 			printf("\t.space %zu\n", var->type.size_of);
