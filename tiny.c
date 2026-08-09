@@ -24,8 +24,12 @@ char const *const TOKENS[] = {
 	":",
 	",",
 	".",
-	"*",
 	"=",
+	"*",
+	"&",
+	"-",
+	"+",
+	"!",
 };
 
 struct
@@ -52,8 +56,12 @@ struct
 			TK_COLON,
 			TK_COMMA,
 			TK_PERIOD,
-			TK_STAR,
 			TK_EQU,
+			TK_ASTER,
+			TK_AMPER,
+			TK_MINUS,
+			TK_PLUS,
+			TK_LOG_NOT,
 			TK_EOF,
 			TK_CONSTANT,
 			TK_IDENTIFIER,
@@ -376,13 +384,34 @@ void gen_expr(void)
 	case TK_BRACK_L:
 		break;
 	case TK_PAREN_L:
+		lex_next();
+		gen_expr();
+		// if () // tODO
+		lex_next();
 		break;
 	case TK_IF:
 		break;
-	case TK_STAR:
+	case TK_ASTER:
+		lex_next();
+		gen_expr();
+		if (lexer.token.type == TK_EQU)
+		{
+			puts("\tpush %rax");
+			lex_next();
+			gen_expr();
+			puts("\tpop %rbx\n"
+				 "\tmov (%rbx), %rax");
+		}
+		else
+		{ // TODO
+			puts("\tmov %rax, (%rax)");
+		}
 		break;
+	case TK_AMPER:
+		lex_next();
+
 	case TK_IDENTIFIER:
-	{
+	{ // LEFT OFF HERE TODO TODO TODO
 		struct c_var *var = find_var(pool.identifiers.elems[lexer.token.value]);
 		lex_next();
 		if (var->storage == C_VAR_TYPEDEF)
@@ -410,7 +439,7 @@ void gen_expr(void)
 		else if (lexer.token.type == TK_PAREN_L)
 		{
 			lex_next();
-			// TODO
+			// TODO calls
 			error(ERR_INTERNAL);
 		}
 		else
@@ -462,7 +491,7 @@ void gen_decl(struct c_var *var)
 			break;
 		}
 		lex_next();
-		if (lexer.token.type == TK_STAR)
+		if (lexer.token.type == TK_ASTER)
 		{
 			var->type.next = calloc(1, sizeof *var->type.next);
 			*var->type.next = var->type;
