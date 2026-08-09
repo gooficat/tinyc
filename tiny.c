@@ -542,15 +542,14 @@ void gen_decl(struct c_var *var)
 			}
 		}
 		lex_next();
-		printf("\"%s\":\n", var->name);
 		if (lexer.token.type == TK_BRACE_L)
 		{
 			if (frame.previous != NULL)
 			{
 				error(ERR_UNEXPECTED_TOKEN);
 			}
-
-			//			printf(";New decl function has a body!\n");
+			printf(".globl \"%s\"\n", var->name);
+			printf("\"%s\":\n", var->name);
 			{
 				struct frame back = frame;
 				memset(&frame, 0, sizeof frame);
@@ -629,7 +628,8 @@ void gen_decl(struct c_var *var)
 		}
 		else
 		{
-			var->storage = C_VAR_STATIC;
+			var->storage = C_VAR_STATIC; // WRONG! SHOULD BE EXTERN AND HAVE A CHECK IF ITS ARLEADY SET
+			printf(".globl \"%s\"\n", var->name);
 			printf("\"%s\":\n", var->name);
 			printf("\t.space %zu\n", var->type.size_of);
 		}
